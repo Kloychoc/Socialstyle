@@ -56,7 +56,13 @@ function pgStore(url) {
   };
 }
 
-const DB_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL || "";
+// Accept DATABASE_URL / POSTGRES_URL, or the same names with a prefix added when the
+// database was connected in Vercel (e.g. STORAGE_DATABASE_URL). Pooled URLs win over unpooled.
+const DB_ENV =
+  Object.keys(process.env)
+    .filter(k => /(^|_)(DATABASE_URL|POSTGRES_URL)$/.test(k) && process.env[k])
+    .sort((a, b) => (a === "DATABASE_URL" ? -1 : b === "DATABASE_URL" ? 1 : a.length - b.length))[0] || null;
+const DB_URL = DB_ENV ? process.env[DB_ENV] : "";
 // On Vercel the disk is read-only, so a database is required there.
 const store = DB_URL ? pgStore(DB_URL) : (process.env.VERCEL ? null : fileStore());
 let ready = null; // init once per instance, on the first request
@@ -67,7 +73,15 @@ const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "10kb" }));
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, storage: DB_URL ? "postgres" : store ? "file" : "none" }));
+// Health check: says which storage is in use and which variable it came from (never the value).
+app.get("/api/health", async (_req, res) => {
+  const out = { ok: true, storage: DB_URL ? "postgres" : store ? "file" : "none", dbVariable: DB_ENV };
+  if (store) {
+    try { await ensureReady(); out.database = "connected"; }
+    catch (e) { out.ok = false; out.database = "error: " + (e.code || e.message || "unknown"); }
+  }
+  res.status(out.ok ? 200 : 500).json(out);
+});
 
 // passcode check for every other /api route
 app.use("/api", (req, res, next) => {

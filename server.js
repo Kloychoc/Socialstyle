@@ -1,7 +1,7 @@
 // Payso Social Style — Express app.
-// Vercel: this file is exported as one function; files in public/ are served by Vercel's CDN.
-// Local:  `npm start` runs it as a normal server (and serves public/ itself).
-// Storage: Postgres when DATABASE_URL is set (Neon on Vercel), otherwise a local JSON file.
+// Railway / local: `npm start` runs it as a normal server that also serves public/.
+// (It also exports the app, so it can run on Vercel unchanged.)
+// Storage: Postgres when DATABASE_URL is set (Railway Postgres), otherwise a local JSON file.
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -30,12 +30,12 @@ function fileStore() {
 
 function pgStore(url) {
   const { Pool } = require("pg");
-  const local = /localhost|127\.0\.0\.1/.test(url);
-  const pool = new Pool({
-    connectionString: url,
-    max: 3,
-    ssl: process.env.PGSSL === "false" || local ? false : { rejectUnauthorized: false },
-  });
+  // No SSL for local or Railway's private network (*.railway.internal); SSL for public/hosted URLs.
+  // Override with PGSSL=true / PGSSL=false.
+  let host = ""; try { host = new URL(url).hostname; } catch {}
+  const privateNet = /^(localhost|127\.0\.0\.1)$/.test(host) || host.endsWith(".railway.internal");
+  const useSsl = process.env.PGSSL ? process.env.PGSSL === "true" : !privateNet;
+  const pool = new Pool({ connectionString: url, max: 5, ssl: useSsl ? { rejectUnauthorized: false } : false });
   const cols = 'id, name, team, a, r, style, answers, updated_at AS "updatedAt"';
   return {
     async init() {
@@ -138,7 +138,7 @@ app.put("/api/results/:id", async (req, res, next) => {
 
 app.use("/api", (_req, res) => res.status(404).json({ error: "not_found" }));
 
-// Local only: Vercel serves public/ from its CDN and ignores express.static.
+// Serves the page and its scripts (on Vercel the CDN does this instead).
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((err, _req, res, _next) => {

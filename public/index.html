@@ -400,7 +400,9 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
     } catch (e) {
       if (e.message === "access_code") return;
       row = { ...score(st.ans), name: nameVal(), team: st.team };
-      msg = "บันทึกไม่สำเร็จ ผลนี้ยังไม่ขึ้นในแผนที่ทีม ลองกด 'ทำใหม่' แล้วส่งอีกครั้ง";
+      msg = e.message === "db_not_configured"
+        ? "บันทึกไม่สำเร็จ เพราะระบบยังไม่ได้เชื่อมฐานข้อมูล แจ้งผู้ดูแลระบบ"
+        : "บันทึกไม่สำเร็จ ผลนี้ยังไม่ขึ้นในแผนที่ทีม ลองกด 'ทำใหม่' แล้วส่งอีกครั้ง";
     } finally {
       btn.removeAttribute("aria-busy"); btn.textContent = "ดูผลของฉัน"; updateProgress();
     }

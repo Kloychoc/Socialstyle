@@ -137,16 +137,50 @@ p{margin:0}
 .facts ul{margin:0;padding-left:18px}
 
 /* map */
-.map svg{width:100%;height:auto;display:block;max-width:560px;margin:0 auto}
-.map__caption{text-align:center}
+.map svg{width:100%;height:auto;display:block;max-width:600px;margin:0 auto;overflow:visible}
+.q--driver{fill:var(--driver-bg)} .q--expressive{fill:var(--expressive-bg)} .q--amiable{fill:var(--amiable-bg)} .q--analytical{fill:var(--analytical-bg)}
+.q-label{font:700 16px var(--font)}
+.q-label--driver{fill:var(--driver-ink)} .q-label--expressive{fill:var(--expressive-ink)} .q-label--amiable{fill:var(--amiable-ink)} .q-label--analytical{fill:var(--analytical-ink)}
+.q-sub{fill:var(--muted);font:500 13px var(--font)}
+.axis{fill:var(--ink);font:700 13px var(--font)}
+.axis--en{fill:var(--muted);font-weight:500}
+.frame{fill:none;stroke:var(--line);stroke-width:1}
+.midline{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4;opacity:.7}
+.map-empty{fill:var(--muted);font:600 14px var(--font)}
+.dot{cursor:pointer;outline:none}
+.dot__fill{fill:var(--tone-ink);stroke:var(--surface);stroke-width:2}
+.dot__txt{fill:var(--on-tone);font:700 14px var(--font);pointer-events:none}
+.dot__ring{fill:none;stroke:none;stroke-width:3}
+.dot--me .dot__ring{stroke:var(--brand)}
+.dot:focus-visible .dot__ring,.dot.is-sel .dot__ring{stroke:var(--ink)}
+.dot__tag{visibility:hidden;pointer-events:none}
+.dot:hover .dot__tag,.dot:focus-visible .dot__tag,.dot.is-sel .dot__tag,.dot--pinned .dot__tag{visibility:visible}
+.dot__tagbg{fill:var(--ink)}
+.dot__tagtxt{fill:var(--surface);font:600 13px var(--font)}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s-1) var(--s-4);font-size:var(--t-xs);color:var(--muted)}
+.legend__me{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--brand);margin-right:6px;vertical-align:-1px}
+.spot{display:grid;gap:var(--s-2);padding:var(--s-4);border-radius:var(--r-md);background:var(--tone-bg)}
+.spot__head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-3)}
+.spot__name{font-size:var(--t-lg);font-weight:800}
+.spot ul{margin:0;padding-left:18px;font-size:var(--t-sm)}
+.spot__label{font-size:var(--t-xs);font-weight:700;color:var(--tone-ink)}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-2)}
 .tile{border-radius:var(--r-md);padding:var(--s-3);display:grid;background:var(--tone-bg)}
 .tile__label{font-size:var(--t-xs);font-weight:700;color:var(--tone-ink)}
+.tile__unit{font-size:var(--t-xs);color:var(--muted)}
 .tile__num{font-size:var(--t-xl);font-family:var(--mono);font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums}
 
 /* people */
-.person{display:grid;grid-template-columns:36px 1fr auto;gap:var(--s-3);align-items:center;padding-block:var(--s-3);border-top:1px solid var(--line)}
-.person:first-child{border-top:0}
+.group{display:grid}
+.group + .group{margin-top:var(--s-3)}
+.group__head{display:flex;justify-content:space-between;align-items:baseline;padding-block:var(--s-2);border-bottom:2px solid var(--tone-ink);
+  font-size:var(--t-sm);font-weight:700;color:var(--tone-ink)}
+.group__count{font-family:var(--mono);font-weight:500}
+.person{display:grid;grid-template-columns:36px 1fr auto;gap:var(--s-3);align-items:center;padding:var(--s-2);border-radius:var(--r-sm);
+  cursor:pointer;transition:background var(--dur)}
+.person:hover{background:var(--tint)}
+.person.is-sel{background:var(--tone-bg);box-shadow:inset 3px 0 0 var(--tone-ink)}
+.badge{font-size:var(--t-xs);color:var(--muted);border:1px solid var(--line);border-radius:var(--r-pill);padding:0 var(--s-2);white-space:nowrap}
 .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:var(--t-sm);
   background:var(--tone-ink);color:var(--on-tone)}
 .person__info{min-width:0}
@@ -157,6 +191,7 @@ p{margin:0}
 footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:68ch}
 @media (max-width:480px){
   .tiles{grid-template-columns:repeat(2,1fr)}
+  .q-label{font-size:19px} .q-sub,.axis{font-size:16px} .dot__txt{font-size:17px} .dot__tagtxt{font-size:17px}
   .card{padding:var(--s-4)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -229,11 +264,16 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
       <div class="tiles" id="tiles"></div>
       <div class="card stack">
         <div class="map" id="team-map"></div>
-        <p class="muted map__caption">จุดยิ่งใกล้เส้นกลาง = สไตล์ยิ่งยืดหยุ่น · จุดยิ่งไปทางมุม = สไตล์ยิ่งชัด</p>
+        <div class="legend">
+          <span><i class="legend__me"></i>วงขอบน้ำเงิน = คุณ</span>
+          <span>แตะหรือชี้ที่จุดเพื่อดูชื่อ</span>
+          <span>ใกล้เส้นประ = ปรับสไตล์ได้ง่าย · ไกลไปทางมุม = สไตล์ชัด</span>
+        </div>
+        <div id="spot" aria-live="polite" hidden></div>
       </div>
       <div class="card stack" id="insight" hidden></div>
       <div class="card">
-        <h3>รายชื่อ</h3>
+        <h3>รายชื่อตามสไตล์</h3>
         <div id="people"></div>
       </div>
       <p class="notice notice--error" id="team-error" hidden>โหลดข้อมูลทีมไม่สำเร็จ ระบบจะลองใหม่อัตโนมัติ</p>
@@ -246,6 +286,7 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 </div>
 
 <script src="questions.js"></script>
+<script src="map-layout.js"></script>
 <script>
 (() => {
   const { QUESTIONS: Q, LO, HI, MID, score } = window.SocialStyle;
@@ -316,7 +357,7 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
   // ---------- state ----------
   let myId = store.get("ss_id");
   if (!myId) { myId = uuid(); store.set("ss_id", myId); }
-  const st = { team: null, ans: Array(Q.length).fill(0), rows: [], filter: "all" };
+  const st = { team: null, ans: Array(Q.length).fill(0), rows: [], filter: "all", sel: null };
 
   // ---------- gate ----------
   function showGate(wrong) {
@@ -411,36 +452,91 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
   });
 
   // ---------- map (svg) ----------
+  // Positions come from MapLayout (public/map-layout.js), which keeps every dot inside the
+  // quadrant its scores belong to and stops dots overlapping. Covered by test/map-layout.test.js.
   const NS = "http://www.w3.org/2000/svg";
   const sv = (tag, attrs = {}, text) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); if (text != null) n.textContent = text; return n; };
-  // x: assertiveness LO..HI (Ask -> Tell); y: responsiveness LO..HI (Control top -> Emote bottom)
-  function mapSvg(points, size = 420) {
-    const pad = 36, inner = size - pad * 2;
-    const X = a => pad + (a - LO) / (HI - LO) * inner, Y = r => pad + (r - LO) / (HI - LO) * inner;
-    const s = sv("svg", { viewBox: `0 0 ${size} ${size}`, role: "img", "aria-label": "แผนที่ Social Style" });
-    [["analytical", pad, pad], ["driver", pad + inner / 2, pad], ["amiable", pad, pad + inner / 2], ["expressive", pad + inner / 2, pad + inner / 2]]
-      .forEach(([k, x, y]) => {
-        s.append(sv("rect", { x, y, width: inner / 2, height: inner / 2, style: `fill:var(--${k}-bg)` }));
-        const left = k === "analytical" || k === "amiable", top = k === "analytical" || k === "driver";
-        s.append(sv("text", { x: left ? x + 12 : x + inner / 2 - 12, y: top ? y + 24 : y + inner / 2 - 12, "text-anchor": left ? "start" : "end",
-          style: `fill:var(--${k}-ink);font:700 15px var(--font)` }, S[k].name));
-      });
-    const line = (x1, y1, x2, y2) => s.append(sv("line", { x1, y1, x2, y2, style: "stroke:var(--line);stroke-width:1.5" }));
-    line(pad + inner / 2, pad, pad + inner / 2, pad + inner); line(pad, pad + inner / 2, pad + inner, pad + inner / 2);
-    const axis = (x, y, t, anchor, rot) => s.append(sv("text", { x, y, "text-anchor": anchor, transform: rot ? `rotate(-90 ${x} ${y})` : "",
-      style: "fill:var(--muted);font:600 13px var(--font)" }, t));
-    axis(pad, size - 12, "← ถาม (Ask)", "start"); axis(size - pad, size - 12, "บอก (Tell) →", "end");
-    axis(20, pad, "เก็บอารมณ์", "end", true); axis(20, size - pad, "แสดงอารมณ์", "start", true);
-    points.forEach(p => {
-      const g = sv("g"), cx = X(p.a) + p.jx, cy = Y(p.r) + p.jy;
-      g.append(sv("circle", { cx, cy, r: 14, style: `fill:var(--${p.style}-ink);stroke:var(--surface);stroke-width:2` }));
-      g.append(sv("text", { x: cx, y: cy + 5, "text-anchor": "middle", style: "fill:var(--on-tone);font:700 13px var(--font)" }, p.label));
-      g.append(sv("title", {}, p.title));
-      s.append(g);
+  const G = window.MapLayout.GEOM, HALF = window.MapLayout.HALF;
+  const isNearLine = (a, r) => Math.min(Math.abs(a - MID), Math.abs(r - MID)) <= 3;
+
+  // points: [{id, a, r, style, name, team, isMe}]; opts: {selectedId, onSelect, pinLabel}
+  function mapSvg(points, opts = {}) {
+    const { W, H, padX, padY, inner, r: R } = G;
+    const s = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "group",
+      "aria-label": "แผนที่ Social Style แกนนอนจากถามไปบอก แกนตั้งจากเก็บอารมณ์ไปแสดงอารมณ์" });
+
+    // quadrants: x = Ask (left) -> Tell (right); y = Control (top) -> Emote (bottom)
+    // style names sit OUTSIDE the grid's corners so dots never cover them
+    [["analytical", 0, 0], ["driver", 1, 0], ["amiable", 0, 1], ["expressive", 1, 1]].forEach(([k, col, row]) => {
+      const x = padX + col * HALF, y = padY + row * HALF, left = col === 0, top = row === 0;
+      s.append(sv("rect", { x, y, width: HALF, height: HALF, class: `q q--${k}` }));
+      const tx = left ? padX : padX + inner, anchor = left ? "start" : "end";
+      const ty = top ? padY - 28 : padY + inner + 24;
+      s.append(sv("text", { x: tx, y: ty, "text-anchor": anchor, class: `q-label q-label--${k}` }, S[k].name));
+      s.append(sv("text", { x: tx, y: ty + 18, "text-anchor": anchor, class: "q-sub" }, S[k].th));
     });
+    s.append(sv("rect", { x: padX, y: padY, width: inner, height: inner, class: "frame" }));
+    s.append(sv("line", { x1: padX + HALF, y1: padY, x2: padX + HALF, y2: padY + inner, class: "midline" }));
+    s.append(sv("line", { x1: padX, y1: padY + HALF, x2: padX + inner, y2: padY + HALF, class: "midline" }));
+
+    // axis labels on all four sides
+    const t = (x, y, txt, anchor, cls = "axis") => s.append(sv("text", { x, y, "text-anchor": anchor, class: cls }, txt));
+    t(padX + HALF, padY - 28, "▲ เก็บอารมณ์", "middle"); t(padX + HALF, padY - 10, "Control", "middle", "axis axis--en");
+    t(padX + HALF, padY + inner + 24, "▼ แสดงอารมณ์", "middle"); t(padX + HALF, padY + inner + 42, "Emote", "middle", "axis axis--en");
+    t(padX - 8, padY + HALF - 4, "◀ ถาม", "end"); t(padX - 8, padY + HALF + 14, "Ask", "end", "axis axis--en");
+    t(padX + inner + 8, padY + HALF - 4, "บอก ▶", "start"); t(padX + inner + 8, padY + HALF + 14, "Tell", "start", "axis axis--en");
+
+    if (!points.length) {
+      s.append(sv("text", { x: padX + HALF, y: padY + HALF - 12, "text-anchor": "middle", class: "map-empty" }, "ยังไม่มีข้อมูลในกลุ่มนี้"));
+    }
+
+    const dots = sv("g");
+    window.MapLayout.layout(points).forEach(p => {
+      const cls = ["dot", `tone-${p.style}`];
+      if (p.isMe) cls.push("dot--me");
+      if (opts.selectedId === p.id) cls.push("is-sel");
+      if (opts.pinLabel) cls.push("dot--pinned");
+      const g = sv("g", { class: cls.join(" "), tabindex: "0", role: "button", "data-id": p.id,
+        "aria-label": `${p.name}${p.isMe ? " (คุณ)" : ""} สไตล์ ${S[p.style].name} ทีม ${p.team === "sales" ? "Sales" : "Marketing"}`,
+        "aria-pressed": String(opts.selectedId === p.id) });
+      g.append(sv("circle", { cx: p.x, cy: p.y, r: R + 4, class: "dot__ring" }));
+      g.append(sv("circle", { cx: p.x, cy: p.y, r: R, class: "dot__fill" }));
+      g.append(sv("text", { x: p.x, y: p.y + 5, "text-anchor": "middle", class: "dot__txt" }, initial(p.name)));
+      const tag = sv("g", { class: "dot__tag" });
+      tag.append(sv("rect", { rx: 6, class: "dot__tagbg" }));
+      tag.append(sv("text", { x: p.x, y: p.y, "text-anchor": "middle", class: "dot__tagtxt" }, p.isMe ? `${p.name} (คุณ)` : p.name));
+      g.append(tag);
+      const raise = () => { if (dots.lastChild !== g) dots.append(g); }; // hovered/focused dot (and its name tag) to the front, once
+      g.addEventListener("pointerenter", raise);
+      g.addEventListener("focus", raise);
+      if (opts.onSelect) {
+        g.addEventListener("click", () => opts.onSelect(p.id));
+        g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); opts.onSelect(p.id); } });
+      }
+      dots.append(g);
+    });
+    s.append(dots);
+    // the selected dot sits on top
+    const sel = dots.querySelector(".is-sel"); if (sel) dots.append(sel);
     return s;
   }
-  const jitter = id => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0; return [((h & 15) - 7.5) * 1.3, (((h >> 4) & 15) - 7.5) * 1.3]; };
+
+  // Name tags are sized from the rendered text, so call this once the svg is in the page.
+  function sizeTags(svg) {
+    svg.querySelectorAll(".dot").forEach(g => {
+      const c = g.querySelector(".dot__fill"), txt = g.querySelector(".dot__tagtxt"), bg = g.querySelector(".dot__tagbg");
+      const cx = +c.getAttribute("cx"), cy = +c.getAttribute("cy");
+      const above = cy - G.r - 34 > 0;
+      txt.setAttribute("y", above ? cy - G.r - 14 : cy + G.r + 24);
+      let bb; try { bb = txt.getBBox(); } catch { return; }
+      const halfW = bb.width / 2 + 8;
+      txt.setAttribute("x", Math.max(halfW + 2, Math.min(G.W - halfW - 2, cx)));
+      bb = txt.getBBox();
+      bg.setAttribute("x", bb.x - 8); bg.setAttribute("y", bb.y - 4);
+      bg.setAttribute("width", bb.width + 16); bg.setAttribute("height", bb.height + 8);
+    });
+  }
+  function mountMap(container, svg) { container.textContent = ""; container.append(svg); sizeTags(svg); }
 
   // ---------- result ----------
   function renderResult(row, msg) {
@@ -448,7 +544,6 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
     box.textContent = "";
     const list = arr => { const u = el("ul"); arr.forEach(x => u.append(el("li", { text: x }))); return u; };
     const map = el("div", { class: "card map" });
-    map.append(mapSvg([{ a: row.a, r: row.r, style: k, jx: 0, jy: 0, label: initial(row.name), title: "ตำแหน่งของคุณ" }], 360));
     const retake = el("button", { class: "btn btn--ghost", type: "button", text: "ทำใหม่" });
     retake.addEventListener("click", () => { box.hidden = true; $("#quiz-wrap").hidden = false; window.scrollTo({ top: 0 }); });
     const toTeam = el("button", { class: "btn", type: "button", text: "ดูแผนที่ทีม" });
@@ -472,6 +567,7 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
       msg ? el("p", { class: "notice" + (msg.startsWith("บันทึกไม่") ? " notice--error" : ""), text: msg }) : null,
       el("div", { class: "row" }, toTeam, retake));
     box.hidden = false; $("#quiz-wrap").hidden = true;
+    mountMap(map, mapSvg([{ id: "me", a: row.a, r: row.r, style: k, name: row.name || "คุณ", team: row.team, isMe: true }], { pinLabel: true }));
   }
 
   // ---------- team ----------
@@ -489,33 +585,78 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
     if (!$("#panel-team").hidden) teamTimer = setTimeout(loadTeam, 20000); // light refresh while the map is open
   }
 
+  function select(id) {
+    st.sel = st.sel === id ? null : id;
+    renderTeam();
+    const dot = document.querySelector(`#team-map .dot[data-id="${id}"]`);
+    if (dot && document.activeElement !== dot) dot.focus({ preventScroll: true });
+  }
+
   function renderTeam() {
     const rows = st.rows.filter(r => S[r.style] && (st.filter === "all" || r.team === st.filter));
+    if (st.sel && !rows.some(r => r.id === st.sel)) st.sel = null;
+    const teamName = t => (t === "sales" ? "Sales" : "Marketing");
 
+    // counts
     const tiles = $("#tiles"); tiles.textContent = "";
-    ORDER.forEach(k => tiles.append(el("div", { class: `tile tone-${k}` },
-      el("span", { class: "tile__label", text: `${S[k].name} · ${S[k].color}` }),
-      el("span", { class: "tile__num", text: String(rows.filter(r => r.style === k).length) }))));
+    ORDER.forEach(k => {
+      const n = rows.filter(r => r.style === k).length;
+      tiles.append(el("div", { class: `tile tone-${k}` },
+        el("span", { class: "tile__label", text: `${S[k].name} · ${S[k].color}` }),
+        el("span", { class: "tile__num", text: String(n) }),
+        el("span", { class: "tile__unit", text: rows.length ? `คน · ${Math.round(n / rows.length * 100)}%` : "คน" })));
+    });
 
-    const m = $("#team-map"); m.textContent = "";
-    m.append(mapSvg(rows.map(r => { const [jx, jy] = jitter(r.id); return { a: r.a, r: r.r, style: r.style, jx, jy, label: initial(r.name), title: `${r.name} · ${S[r.style].name}` }; })));
+    // map
+    mountMap($("#team-map"), mapSvg(rows.map(r => ({ id: r.id, a: r.a, r: r.r, style: r.style, name: r.name, team: r.team, isMe: r.id === myId })),
+      { selectedId: st.sel, onSelect: select }));
 
+    // selected person: how to talk with them
+    const spot = $("#spot"); spot.textContent = "";
+    const cur = rows.find(r => r.id === st.sel);
+    if (cur) {
+      const d = S[cur.style];
+      const list = el("ul"); d.talk.forEach(x => list.append(el("li", { text: x })));
+      spot.className = `spot tone-${cur.style}`;
+      spot.append(
+        el("div", { class: "spot__head" },
+          el("span", { class: "spot__name", text: cur.name + (cur.id === myId ? " (คุณ)" : "") }),
+          el("span", { class: `chip tone-${cur.style}`, text: `${d.name} · ${d.th}` }),
+          el("span", { class: "badge", text: teamName(cur.team) }),
+          isNearLine(cur.a, cur.r) ? el("span", { class: "badge", text: "ใกล้เส้นแบ่ง" }) : null),
+        el("span", { class: "spot__label", text: cur.id === myId ? "คนอื่นคุยกับคุณให้ได้ผล ถ้า…" : `คุยกับ${cur.name}ให้ได้ผล` }),
+        list);
+      spot.hidden = false;
+    } else spot.hidden = true;
+
+    // people, grouped by style (same order as the map legend)
     const p = $("#people"); p.textContent = "";
     if (!rows.length) {
       p.append(el("div", { class: "empty" },
         el("strong", { text: "ยังไม่มีใครทำแบบทดสอบ" }),
         el("span", { text: "ส่งลิงก์หน้านี้ให้ทีม Sales และ Marketing ผลของแต่ละคนจะขึ้นที่นี่หลังกดส่ง" })));
     } else {
-      [...rows].sort((x, y) => ORDER.indexOf(x.style) - ORDER.indexOf(y.style) || x.name.localeCompare(y.name, "th")).forEach(r => {
-        p.append(el("div", { class: `person tone-${r.style}` },
-          el("span", { class: "avatar", "aria-hidden": "true", text: initial(r.name) }),
-          el("div", { class: "person__info" },
-            el("div", { class: "person__name", text: r.name + (r.id === myId ? " (คุณ)" : "") }),
-            el("div", { class: "person__team", text: r.team === "sales" ? "Sales" : "Marketing" })),
-          el("span", { class: `chip tone-${r.style}`, text: S[r.style].name })));
+      ORDER.forEach(k => {
+        const members = rows.filter(r => r.style === k).sort((x, y) => x.name.localeCompare(y.name, "th"));
+        if (!members.length) return;
+        const group = el("div", { class: `group tone-${k}` },
+          el("div", { class: "group__head" }, el("span", { text: `${S[k].name} · ${S[k].th}` }), el("span", { class: "group__count", text: String(members.length) })));
+        members.forEach(r => {
+          const row = el("div", { class: `person tone-${k}${st.sel === r.id ? " is-sel" : ""}`, role: "button", tabindex: "0", "aria-pressed": String(st.sel === r.id) },
+            el("span", { class: "avatar", "aria-hidden": "true", text: initial(r.name) }),
+            el("div", { class: "person__info" },
+              el("div", { class: "person__name", text: r.name + (r.id === myId ? " (คุณ)" : "") }),
+              el("div", { class: "person__team", text: teamName(r.team) })),
+            isNearLine(r.a, r.r) ? el("span", { class: "badge", text: "ใกล้เส้นแบ่ง" }) : el("span"));
+          row.addEventListener("click", () => { select(r.id); $("#team-map").scrollIntoView({ behavior: "smooth", block: "center" }); });
+          row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); } });
+          group.append(row);
+        });
+        p.append(group);
       });
     }
 
+    // insight
     const ins = $("#insight"); ins.textContent = "";
     if (rows.length >= 3) {
       const counts = ORDER.map(k => [k, rows.filter(r => r.style === k).length]).sort((a, b) => b[1] - a[1]);

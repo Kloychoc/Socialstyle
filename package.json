@@ -5,7 +5,8 @@
   "description": "Social Style quiz and team map for Payso Sales & Marketing (Vercel)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node test/map-layout.test.js"
   },
   "engines": {
     "node": "22.x"

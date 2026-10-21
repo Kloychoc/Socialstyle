@@ -24,17 +24,30 @@ for (const k of A.STRENGTH_KEYS) {
 }
 // favouring one strength every time puts it first with the max 8 points
 for (const k of A.STRENGTH_KEYS) {
-  const ans = Q.map(q => (q.lk === k ? 1 : q.rk === k ? 4 : 2));
+  const ans = Q.map(q => (q.lk === k ? 1 : q.rk === k ? 5 : 3));
   const r = A.scoreStrengths(ans);
   assert.strictEqual(r.strengths[0], k, `favouring ${k} ranks it first`);
   assert.strictEqual(r.strengthScores[k], 8);
 }
-// points are conserved: 24 answers, each worth 1 or 2
+// points are conserved: each answer is worth 2 (มาก), 1 (ค่อนข้าง) or 0 (กลางๆ)
 {
-  const ans = Q.map((_, i) => (i % 4) + 1);
+  const ans = Q.map((_, i) => (i % 5) + 1);
   const total = Object.values(A.scoreStrengths(ans).strengthScores).reduce((a, b) => a + b, 0);
-  assert.strictEqual(total, ans.reduce((s, v) => s + (v === 1 || v === 4 ? 2 : 1), 0));
+  assert.strictEqual(total, ans.reduce((s, v) => s + (v === 1 || v === 5 ? 2 : v === 3 ? 0 : 1), 0));
 }
+// all กลางๆ (e.g. every pair timed out): nothing was picked, so no top strengths
+{
+  const r = A.scoreStrengths(Q.map(() => 3));
+  assert.ok(Object.values(r.strengthScores).every(v => v === 0));
+  assert.deepStrictEqual(r.strengths, []);
+}
+// only strengths that were actually picked can be "top"
+{
+  const r = A.scoreStrengths(Q.map((q, i) => (i === 0 ? 1 : 3)));
+  assert.deepStrictEqual(r.strengths, [Q[0].lk]);
+}
+// old 4-point answers map onto the 5-point scale with the same meaning
+assert.deepStrictEqual(A.upgradeStrengthAnswers([1, 2, 3, 4]), [1, 2, 4, 5]);
 
 // ties never favour a strength: with random answers each strength lands in the top 3 about 25% of the time
 {
@@ -42,12 +55,12 @@ for (const k of A.STRENGTH_KEYS) {
   let seed = 9; const rnd = () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed;
     t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const N = 60000, hits = Object.fromEntries(A.STRENGTH_KEYS.map(k => [k, 0]));
-  for (let t = 0; t < N; t++) A.scoreStrengths(Q.map(() => 1 + Math.floor(rnd() * 4))).strengths.forEach(k => hits[k]++);
+  for (let t = 0; t < N; t++) A.scoreStrengths(Q.map(() => 1 + Math.floor(rnd() * 5))).strengths.forEach(k => hits[k]++);
   for (const [k, n] of Object.entries(hits)) {
     const pct = n / N * 100;
     assert.ok(pct > 23.5 && pct < 26.5, `${k} reaches the top 3 ${pct.toFixed(1)}% of the time (fair is 25%)`);
   }
-  const ans = Q.map((_, i) => (i % 4) + 1);
+  const ans = Q.map((_, i) => (i % 5) + 1);
   assert.deepStrictEqual(A.scoreStrengths(ans).strengths, A.scoreStrengths(ans).strengths, "same answers, same result");
 }
 

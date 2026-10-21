@@ -118,7 +118,6 @@ p{margin:0}
 .option:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
 .progress{height:6px;background:var(--tint);border-radius:var(--r-pill);overflow:hidden}
 .progress__bar{display:block;height:100%;background:var(--brand);width:0;transition:width var(--dur)}
-.submit-bar{position:sticky;bottom:0;padding-block:var(--s-3) calc(var(--s-3) + env(safe-area-inset-bottom,0px));background:var(--bg);display:grid;gap:var(--s-2)}
 
 /* chip */
 .chip{display:inline-flex;align-items:center;gap:var(--s-2);font-size:var(--t-xs);font-weight:700;padding:2px var(--s-3);
@@ -199,7 +198,43 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 .part__meta{font-size:var(--t-xs);color:var(--muted)}
 .part__status{font-size:var(--t-xs);font-weight:700;color:var(--muted)}
 .part__status--done{color:var(--brand)}
-.question--pair .poles{font-size:var(--t-base)}
+.who-line{display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-3);align-items:baseline;font-size:var(--t-sm);color:var(--muted)}
+.who-line b{color:var(--ink)}
+.linkbtn{font:inherit;font-size:var(--t-sm);font-weight:600;color:var(--brand);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* one question at a time */
+.flow{display:grid;gap:var(--s-4)}
+.flow__bar{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-sm);color:var(--muted)}
+.flow__count{font-variant-numeric:tabular-nums}
+.flow__topic{font-size:var(--t-lg);font-weight:700;line-height:1.4;min-height:2.8em;display:flex;align-items:flex-end}
+.stmts{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}
+.stmt{display:grid;gap:var(--s-2);align-content:start;padding:var(--s-3) var(--s-4);border:1.5px solid var(--line);border-radius:var(--r-md);
+  background:var(--surface);font-size:var(--t-base);line-height:1.5;transition:border-color var(--dur),background var(--dur)}
+.stmt__tag{font-family:var(--mono);font-size:var(--t-xs);font-weight:500;color:var(--muted)}
+.stmt.is-lean{border-color:var(--brand);background:var(--tint)}
+.stmt.is-lean .stmt__tag{color:var(--brand)}
+.dial{display:flex;justify-content:space-between;align-items:center;gap:var(--s-1);padding-inline:var(--s-2)}
+.dial button{flex:1;display:grid;place-items:center;min-height:56px;background:none;border:0;cursor:pointer;padding:0}
+.dial i{display:block;border-radius:50%;border:2.5px solid var(--brand);background:var(--surface);transition:transform var(--dur),background var(--dur)}
+.dial button:hover i{transform:scale(1.08);background:var(--tint)}
+.dial button[aria-checked="true"] i{background:var(--brand)}
+.dial .is-mid i{border-color:var(--muted)}
+.dial .is-mid[aria-checked="true"] i{background:var(--muted)}
+.dial__labels{display:flex;justify-content:space-between;font-size:var(--t-xs);color:var(--muted);padding-inline:var(--s-1);margin-top:calc(-1 * var(--s-2))}
+.dial__labels span:nth-child(2){text-align:center}
+.dial__labels span:last-child{text-align:right}
+.timer{display:grid;gap:var(--s-1)}
+.timer__track{height:6px;border-radius:var(--r-pill);background:var(--tint);overflow:hidden}
+.timer__fill{display:block;height:100%;background:var(--brand);border-radius:var(--r-pill)}
+.timer.is-low .timer__fill{background:var(--danger)}
+.timer.is-low .timer__txt{color:var(--danger);font-weight:700}
+.timer__txt{font-size:var(--t-xs);color:var(--muted);font-variant-numeric:tabular-nums}
+.flow__nav{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);min-height:40px}
+.keys{font-size:var(--t-xs);color:var(--muted)}
+.rules{margin:0;padding-left:20px;display:grid;gap:var(--s-1)}
+.big-cta{justify-self:start;padding:var(--s-3) var(--s-6);font-size:var(--t-base)}
+.done-mark{font-size:40px;line-height:1}
+@media (prefers-reduced-motion:reduce){.timer__fill{transition:none!important}}
 
 /* my results */
 .overview{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center}
@@ -247,6 +282,10 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 
 @media (max-width:640px){
   .parts{grid-template-columns:1fr}
+  .part{padding:var(--s-2) var(--s-3)}
+  .flow__topic{font-size:var(--t-base);min-height:0}
+  .stmt{padding:var(--s-3);font-size:var(--t-sm)}
+  .keys{display:none}
   .axis-row{grid-template-columns:minmax(0,1fr) 90px minmax(0,1fr)}
 }
 @media (max-width:480px){
@@ -288,7 +327,9 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 
     <!-- QUIZ -->
     <section class="stack" id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz">
-      <div class="card stack">
+      <!-- who you are: full form until filled, then one compact line -->
+      <div class="card stack" id="who-form">
+        <h2 class="subhead">เริ่มจากบอกเราว่าคุณคือใคร</h2>
         <div class="row row--between">
           <label class="field" for="name">ชื่อเล่นหรือชื่อที่ทีมเรียก
             <input class="input" id="name" maxlength="40" autocomplete="nickname" placeholder="เช่น ก้อย">
@@ -300,17 +341,15 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
             </div>
           </div>
         </div>
+        <button class="btn" type="button" id="who-ok" disabled>ไปต่อ</button>
       </div>
+      <div class="who-line" id="who-line" hidden>
+        <span id="who-text"></span>
+        <button class="linkbtn" type="button" id="who-edit">แก้ชื่อหรือทีม</button>
+      </div>
+
       <div class="parts" id="parts" role="group" aria-label="เลือกแบบทดสอบ"></div>
-      <p class="muted" id="part-hint"></p>
-      <div class="card" id="questions"></div>
-      <div class="submit-bar">
-        <div class="progress"><span class="progress__bar" id="prog"></span></div>
-        <div class="row row--between">
-          <span class="muted" id="prog-label" aria-live="polite"></span>
-          <button class="btn" id="submit" disabled>บันทึกและดูผล</button>
-        </div>
-      </div>
+      <div class="card flow" id="flow" aria-live="polite"></div>
     </section>
 
     <!-- MY RESULTS -->

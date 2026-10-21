@@ -8,7 +8,10 @@
 // 2) บุคลิก 4 ตัวอักษร (4-letter type): 4 axes x 5 items, MBTI-style letters (E/I, S/N, T/F, J/P).
 //    5 items per axis means a tie is impossible. Written for Payso; this is NOT the official MBTI®.
 //
-// Answer scale for both: 1..4 = ซ้ายมาก, ค่อนข้างซ้าย, ค่อนข้างขวา, ขวามาก (same UI as Social Style).
+// Answer scales:
+//   strengths: 1..5 = ซ้ายมาก, ค่อนข้างซ้าย, กลางๆ, ค่อนข้างขวา, ขวามาก, 20 seconds per pair (like Gallup);
+//              a pair left unanswered when time runs out counts as กลางๆ (3).
+//   4-letter type: 1..4 (no middle, so an axis can never end 50/50).
 (function (root) {
   // ---------------- strengths ----------------
   // The 4 groups follow the same split as Gallup's 4 CliftonStrengths domains
@@ -135,11 +138,16 @@
     lk, rk, l: STRENGTHS[lk].s[li], r: STRENGTHS[rk].s[ri],
   }));
 
-  // answer 1..4 -> points: 1 = left +2, 2 = left +1, 3 = right +1, 4 = right +2. Each strength 0..8.
+  const STRENGTH_SCALE = 5;      // answers 1..5, 3 = กลางๆ
+  const STRENGTH_SECONDS = 20;   // time per pair, as in Gallup's CliftonStrengths
+  // Answers saved before the middle option existed used 1..4; map them onto 1..5 (no 3).
+  const upgradeStrengthAnswers = old => old.map(v => (v <= 2 ? v : v + 1));
+
+  // answer 1..5 -> points: 1 = left +2, 2 = left +1, 3 = nobody, 4 = right +1, 5 = right +2. Each strength 0..8.
   // Ranking (Gallup ranks CliftonStrengths by score on "intensity of self-description" and breaks ties
   // with secondary factors; we do the same in spirit, with what one answer sheet can tell us):
   //   1. points
-  //   2. strong picks: how many times the person chose "มาก" (1 or 4) for this strength
+  //   2. strong picks: how many times the person chose "มาก" (1 or 5) for this strength
   //   3. head-to-head: among strengths still tied, wins in the pairs where they met each other
   //   4. still tied: an order seeded from this person's own answers. Fair across people (no strength is
   //      favoured), and the same answers always give the same result. The page tells the person about the tie.
@@ -149,9 +157,11 @@
     const beat = {}; // beat[a][b] = 1 when a won the pair against b
     STRENGTH_QUESTIONS.forEach((q, i) => {
       const v = answers[i];
-      const [win, lose] = v <= 2 ? [q.lk, q.rk] : [q.rk, q.lk];
-      pts[win] += v === 1 || v === 4 ? 2 : 1;
-      if (v === 1 || v === 4) strong[win]++;
+      if (v === 3) return; // กลางๆ: no points to either side
+      const [win, lose] = v < 3 ? [q.lk, q.rk] : [q.rk, q.lk];
+      const isStrong = v === 1 || v === 5;
+      pts[win] += isStrong ? 2 : 1;
+      if (isStrong) strong[win]++;
       (beat[win] = beat[win] || {})[lose] = 1;
     });
     let seed = answers.reduce((h, v, i) => (h * 31 + v * (i + 7)) >>> 0, 2166136261);
@@ -163,7 +173,9 @@
       STRENGTH_KEYS.filter(o => o !== k && key(o) === key(k) && beat[k] && beat[k][o]).length]));
     const ranked = [...STRENGTH_KEYS].sort((a, b) =>
       key(b) - key(a) || h2h[b] - h2h[a] || shuffled.indexOf(a) - shuffled.indexOf(b));
-    return { strengthScores: pts, strengths: ranked.slice(0, 3) };
+    // a strength with 0 points was never picked, so it is not a top strength even if ranked 3rd;
+    // all กลางๆ (or every pair timed out) gives an empty list and the page asks for a retake
+    return { strengthScores: pts, strengths: ranked.slice(0, 3).filter(k => pts[k] > 0) };
   }
 
   // ---------------- 4-letter type ----------------
@@ -234,6 +246,7 @@
 
   const api = {
     GROUPS, STRENGTHS, STRENGTH_KEYS, STRENGTH_QUESTIONS, scoreStrengths,
+    STRENGTH_SCALE, STRENGTH_SECONDS, upgradeStrengthAnswers,
     AXES, PAIR_OF, TYPE_QUESTIONS, TYPES, scoreType,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

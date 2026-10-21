@@ -8,17 +8,19 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { QUESTIONS, score } = require("./public/questions.js");
-const { STRENGTH_QUESTIONS, scoreStrengths, TYPE_QUESTIONS, scoreType } = require("./public/assessments.js");
+const { STRENGTH_QUESTIONS, scoreStrengths, STRENGTH_SCALE, upgradeStrengthAnswers,
+  TYPE_QUESTIONS, scoreType } = require("./public/assessments.js");
 
 // Each part: how many answers it needs, how it is scored, and where it is stored.
 // `answersKey` / `fields` are the row keys; `cols` are the matching Postgres columns.
 const SECTIONS = {
-  style:     { n: QUESTIONS.length,           score,              answersKey: "answers",
+  style:     { n: QUESTIONS.length, max: 4,   score,              answersKey: "answers",
                fields: ["a", "r", "style"],               cols: ["a", "r", "style"] },
-  type:      { n: TYPE_QUESTIONS.length,      score: scoreType,      answersKey: "typeAnswers",
+  type:      { n: TYPE_QUESTIONS.length, max: 4, score: scoreType,  answersKey: "typeAnswers",
                fields: ["type", "typeScores"],            cols: ["type", "type_scores"] },
-  strengths: { n: STRENGTH_QUESTIONS.length,  score: scoreStrengths, answersKey: "strengthAnswers",
-               fields: ["strengths", "strengthScores"],   cols: ["strengths", "strength_scores"] },
+  strengths: { n: STRENGTH_QUESTIONS.length, max: STRENGTH_SCALE,
+               score: a => ({ ...scoreStrengths(a), strengthScale: STRENGTH_SCALE }), answersKey: "strengthAnswers",
+               fields: ["strengths", "strengthScores", "strengthScale"], cols: ["strengths", "strength_scores", "strength_scale"] },
 };
 const ANSWER_COL = { answers: "answers", typeAnswers: "type_answers", strengthAnswers: "strength_answers" };
 
@@ -53,7 +55,8 @@ function pgStore(url) {
   const cols = `id, name, team, updated_at AS "updatedAt",
     answers, a, r, style,
     type_answers AS "typeAnswers", type, type_scores AS "typeScores",
-    strength_answers AS "strengthAnswers", strengths, strength_scores AS "strengthScores"`;
+    strength_answers AS "strengthAnswers", strengths, strength_scores AS "strengthScores",
+    strength_scale AS "strengthScale"`;
   return {
     async init() {
       await pool.query(`CREATE TABLE IF NOT EXISTS results (
@@ -67,7 +70,8 @@ function pgStore(url) {
         ADD COLUMN IF NOT EXISTS type_answers JSONB, ADD COLUMN IF NOT EXISTS type TEXT,
         ADD COLUMN IF NOT EXISTS type_scores JSONB,
         ADD COLUMN IF NOT EXISTS strength_answers JSONB, ADD COLUMN IF NOT EXISTS strengths JSONB,
-        ADD COLUMN IF NOT EXISTS strength_scores JSONB`);
+        ADD COLUMN IF NOT EXISTS strength_scores JSONB,
+        ADD COLUMN IF NOT EXISTS strength_scale INT`);
     },
     async list() { return (await pool.query(`SELECT ${cols} FROM results ORDER BY updated_at`)).rows; },
     async get(id) { return (await pool.query(`SELECT ${cols} FROM results WHERE id = $1`, [id])).rows[0] || null; },
@@ -101,9 +105,11 @@ const ensureReady = () => (ready ||= store.init().catch(e => { ready = null; thr
 
 // Results are re-scored from the stored answers when read, so a scoring fix applies to everyone
 // who already took the test (strength ranking tie-break changed after launch).
+// Answers saved on the old 4-point strengths scale (no middle) are moved onto the 5-point scale first.
 function fresh(row) {
   if (row && Array.isArray(row.strengthAnswers) && row.strengthAnswers.length === STRENGTH_QUESTIONS.length) {
-    return { ...row, ...scoreStrengths(row.strengthAnswers) };
+    const answers = row.strengthScale === STRENGTH_SCALE ? row.strengthAnswers : upgradeStrengthAnswers(row.strengthAnswers);
+    return { ...row, strengthAnswers: answers, strengthScale: STRENGTH_SCALE, ...scoreStrengths(answers) };
   }
   return row;
 }
@@ -170,7 +176,7 @@ app.put("/api/results/:id", async (req, res, next) => {
     if (!sec) return res.status(400).json({ error: "bad_section" });
     const answers = body.answers;
     if (!Array.isArray(answers) || answers.length !== sec.n ||
-        !answers.every(v => Number.isInteger(v) && v >= 1 && v <= 4)) {
+        !answers.every(v => Number.isInteger(v) && v >= 1 && v <= sec.max)) {
       return res.status(400).json({ error: "bad_answers" });
     }
     // scored on the server, never trusted from the client

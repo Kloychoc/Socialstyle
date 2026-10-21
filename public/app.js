@@ -3,7 +3,14 @@
 (() => {
   const { QUESTIONS: Q, LO, HI, MID, score } = window.SocialStyle;
   const A = window.Assessments;
-  const SCALE = ["ซ้ายมาก", "ค่อนข้างซ้าย", "ค่อนข้างขวา", "ขวามาก"];
+  // answer dials: circles get smaller toward the middle, like a strength-of-agreement scale
+  const DIAL4 = [
+    { v: 1, size: 40, aria: q => `ตรงกับ A มาก: ${q.l}` }, { v: 2, size: 30, aria: q => `ค่อนข้างตรงกับ A: ${q.l}` },
+    { v: 3, size: 30, aria: q => `ค่อนข้างตรงกับ B: ${q.r}` }, { v: 4, size: 40, aria: q => `ตรงกับ B มาก: ${q.r}` }];
+  const DIAL5 = [
+    { v: 1, size: 40, aria: q => `ตรงกับ A มาก: ${q.l}` }, { v: 2, size: 30, aria: q => `ค่อนข้างตรงกับ A: ${q.l}` },
+    { v: 3, size: 22, mid: true, aria: () => "กลางๆ ใช่พอๆ กัน" },
+    { v: 4, size: 30, aria: q => `ค่อนข้างตรงกับ B: ${q.r}` }, { v: 5, size: 40, aria: q => `ตรงกับ B มาก: ${q.r}` }];
   const ORDER = ["driver", "expressive", "amiable", "analytical"];
   const S = {
     driver:{name:"Driver", th:"ผู้ขับเคลื่อน", color:"แดง", tag:"Tell + Control",
@@ -42,18 +49,25 @@
     style: {
       title: "สไตล์การสื่อสาร", sub: "Social Style 4 สี", time: "30 ข้อ · 8–10 นาที",
       items: Q, done: r => !!r.style, label: r => S[r.style] && `${S[r.style].name} · สี${S[r.style].color}`,
-      hint: "ตอบตามสิ่งที่คุณทำจริงเป็นปกติ ไม่ใช่สิ่งที่อยากเป็น เลือกช่องที่ใกล้ข้อความฝั่งซ้ายหรือขวามากกว่า",
+      scale: DIAL4,
+      rules: ["แต่ละข้อมีสองแบบ A กับ B แตะวงกลมฝั่งที่ใกล้ตัวคุณกว่า วงใหญ่ = ใช่มาก",
+              "ตอบตามสิ่งที่คุณทำจริงเป็นปกติ ไม่ใช่สิ่งที่อยากเป็น", "ไม่จำกัดเวลา ย้อนกลับไปแก้ได้"],
       local: ans => score(ans) },
     strengths: {
-      title: "จุดแข็ง", sub: "12 จุดแข็ง", time: "24 คู่ · 5–6 นาที",
+      title: "จุดแข็ง", sub: "12 จุดแข็ง", time: "24 คู่ · ไม่เกิน 8 นาที", timed: true, scale: DIAL5,
+      rules: [`มีเวลาข้อละ ${A.STRENGTH_SECONDS} วินาที ตอบตามความรู้สึกแรก ไม่ต้องคิดนาน`,
+              "ทั้งสองประโยคดีทั้งคู่ เลือกฝั่งที่เป็นตัวคุณมากกว่า ถ้าใช่พอๆ กันจริงๆ เลือกวงกลางได้",
+              "ย้อนกลับไม่ได้ ถ้าหมดเวลา ข้อนั้นนับเป็นกลางๆ",
+              "ถ้าสลับไปแอปอื่น เวลาจะหยุดนับให้"],
       items: A.STRENGTH_QUESTIONS, pair: true, done: r => Array.isArray(r.strengths) && r.strengths.length > 0,
       label: r => r.strengths.map(k => A.STRENGTHS[k].th).join(", "),
-      hint: "แต่ละข้อมีสองประโยคที่ดีทั้งคู่ เลือกฝั่งที่เป็นตัวคุณมากกว่า แม้จะใกล้เคียงกันก็ให้เลือกฝั่งที่ใช่กว่านิดหนึ่ง",
       local: ans => A.scoreStrengths(ans) },
     type: {
       title: "บุคลิก 4 ตัวอักษร", sub: "แนว MBTI", time: "20 ข้อ · 3–4 นาที",
       items: A.TYPE_QUESTIONS, done: r => !!r.type, label: r => `${r.type} · ${A.TYPES[r.type].th}`,
-      hint: "ตอบตามธรรมชาติของคุณ ไม่ใช่สิ่งที่อยากเป็น เลือกช่องที่ใกล้ข้อความฝั่งซ้ายหรือขวามากกว่า",
+      scale: DIAL4,
+      rules: ["แต่ละข้อมีสองแบบ A กับ B แตะวงกลมฝั่งที่ใกล้ตัวคุณกว่า วงใหญ่ = ใช่มาก",
+              "ตอบตามธรรมชาติของคุณ ไม่ใช่สิ่งที่อยากเป็น", "ไม่จำกัดเวลา ย้อนกลับไปแก้ได้"],
       local: ans => A.scoreType(ans) },
   };
   const PART_KEYS = Object.keys(PARTS);
@@ -124,6 +138,7 @@
       t.tabIndex = on ? 0 : -1;
       $("#" + t.getAttribute("aria-controls")).hidden = !on;
     });
+    if (id !== "tab-quiz" && typeof stopTimer === "function" && st2.view === "ask") { st2.view = "start"; renderFlow(); }
     if (id === "tab-team") loadTeam();
     if (id === "tab-me") renderMe();
   }
@@ -136,72 +151,261 @@
     });
   });
 
-  // ---------- quiz ----------
-  function renderParts() {
-    const box = $("#parts"); box.textContent = "";
-    PART_KEYS.forEach(k => {
-      const p = PARTS[k], done = p.done(st.me);
-      const b = el("button", { type: "button", class: "part", "aria-pressed": String(st.part === k) },
-        el("span", { class: "part__title", text: p.title }),
-        el("span", { class: "part__meta", text: `${p.sub} · ${p.time}` }),
-        el("span", { class: "part__status" + (done ? " part__status--done" : ""), text: done ? "✓ ทำแล้ว: " + p.label(st.me) : "ยังไม่ได้ทำ" }));
-      b.addEventListener("click", () => { st.part = k; renderParts(); renderQuestions(); });
-      box.append(b);
-    });
-    $("#part-hint").textContent = PARTS[st.part].hint;
-  }
+  // ---------- quiz: one question at a time ----------
+  // Flow per part: start screen -> questions (tap = answer + next) -> finish screen -> save.
+  // Strengths: 20 seconds per pair and no going back (as in Gallup); time out = กลางๆ (3).
+  // Progress is kept in this browser so a refresh or a closed tab does not lose answers.
+  const DRAFT = "ss_draft_v2";
+  const st2 = { view: "start", pos: Object.fromEntries(PART_KEYS.map(k => [k, 0])), timeouts: 0, timer: null };
 
-  function renderQuestions() {
-    const p = PARTS[st.part], ans = st.ans[st.part], box = $("#questions");
-    box.textContent = "";
-    p.items.forEach((q, i) => {
-      const id = `${st.part}-${i}`;
-      const scale = el("div", { class: "scale", role: "radiogroup", "aria-labelledby": `qt-${id}`, "aria-describedby": `qp-${id}` });
-      SCALE.forEach((lab, j) => {
-        const inp = el("input", { type: "radio", name: "q-" + id, id: `q-${id}-${j}`, value: String(j + 1) });
-        if (ans[i] === j + 1) inp.checked = true;
-        inp.addEventListener("change", () => { ans[i] = j + 1; updateProgress(); });
-        scale.append(el("label", { class: "option", for: `q-${id}-${j}` }, inp, lab));
+  function loadDraft() {
+    try {
+      const d = JSON.parse(store.get(DRAFT) || "{}");
+      // name and team are kept too, so a refresh before the first save does not ask again
+      if (d.who && !nameVal()) { $("#name").value = d.who.name || ""; if (d.who.team) setTeam(d.who.team); }
+      PART_KEYS.forEach(k => {
+        const x = d[k];
+        if (x && Array.isArray(x.ans) && x.ans.length === PARTS[k].items.length) { st.ans[k] = x.ans; st2.pos[k] = Math.min(x.pos || 0, x.ans.length); }
       });
-      box.append(el("div", { class: "question" + (p.pair ? " question--pair" : "") },
-        el("div", { class: "question__head" },
-          el("span", { class: "question__num", text: String(i + 1).padStart(2, "0") }),
-          el("span", { class: "question__topic", id: `qt-${id}`, text: q.t || "ข้อไหนเป็นตัวคุณมากกว่า" })),
-        el("div", { class: "poles", id: `qp-${id}` },
-          el("span", {}, el("span", { class: "sr-only", text: "ซ้าย: " }), q.l),
-          el("span", {}, el("span", { class: "sr-only", text: "ขวา: " }), q.r)),
-        scale));
-    });
-    updateProgress();
+    } catch {}
+  }
+  function saveDraft() {
+    try {
+      const d = JSON.parse(store.get(DRAFT) || "{}");
+      d[st.part] = { ans: st.ans[st.part], pos: st2.pos[st.part] };
+      d.who = { name: nameVal(), team: st.team };
+      store.set(DRAFT, JSON.stringify(d));
+    } catch {}
+  }
+  function clearDraft(part) {
+    try { const d = JSON.parse(store.get(DRAFT) || "{}"); delete d[part]; store.set(DRAFT, JSON.stringify(d)); } catch {}
   }
 
+  // who you are
   const nameVal = () => $("#name").value.trim();
-  function updateProgress() {
-    const ans = st.ans[st.part], total = ans.length, n = ans.filter(Boolean).length;
-    $("#prog").style.width = (n / total * 100) + "%";
-    const missing = [];
-    if (!nameVal()) missing.push("ชื่อ");
-    if (!st.team) missing.push("ทีม");
-    $("#prog-label").textContent = `${PARTS[st.part].title}: ตอบแล้ว ${n} / ${total}` + (missing.length ? ` · ยังไม่ได้ใส่${missing.join("และ")}` : "");
-    $("#submit").disabled = !(n === total && st.team && nameVal());
+  const whoReady = () => !!(nameVal() && st.team);
+  function renderWho(forceForm) {
+    const ready = whoReady() && !forceForm;
+    $("#who-form").hidden = ready;
+    $("#who-line").hidden = !ready;
+    $("#who-ok").disabled = !whoReady();
+    if (ready) {
+      const t = $("#who-text"); t.textContent = "ทำแบบทดสอบในชื่อ ";
+      t.append(el("b", { text: nameVal() }), ` · ${teamName(st.team)}`);
+    }
+    renderFlow();
   }
   function setTeam(t) {
     st.team = t;
     document.querySelectorAll("#team-seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.team === t)));
-    updateProgress();
+    $("#who-ok").disabled = !whoReady();
   }
   document.querySelectorAll("#team-seg button").forEach(b => b.addEventListener("click", () => setTeam(b.dataset.team)));
-  $("#name").addEventListener("input", updateProgress);
+  $("#name").addEventListener("input", () => { $("#who-ok").disabled = !whoReady(); });
+  $("#who-ok").addEventListener("click", () => { saveWho(); renderWho(false); });
+  function saveWho() {
+    try { const d = JSON.parse(store.get(DRAFT) || "{}"); d.who = { name: nameVal(), team: st.team }; store.set(DRAFT, JSON.stringify(d)); } catch {}
+  }
+  $("#who-edit").addEventListener("click", () => { stopTimer(); renderWho(true); $("#name").focus(); });
 
-  $("#submit").addEventListener("click", async () => {
-    const btn = $("#submit"), part = st.part, answers = st.ans[part].slice();
+  function renderParts() {
+    const box = $("#parts"); box.textContent = "";
+    PART_KEYS.forEach(k => {
+      const p = PARTS[k], done = p.done(st.me);
+      const answered = p.timed ? 0 : st.ans[k].filter(Boolean).length; // timed test always restarts
+      const status = done ? "✓ ทำแล้ว: " + p.label(st.me)
+        : answered ? `ทำค้างไว้ ${answered}/${p.items.length} ข้อ` : "ยังไม่ได้ทำ";
+      const b = el("button", { type: "button", class: "part", "aria-pressed": String(st.part === k) },
+        el("span", { class: "part__title", text: p.title }),
+        el("span", { class: "part__meta", text: `${p.sub} · ${p.time}` }),
+        el("span", { class: "part__status" + (done ? " part__status--done" : ""), text: status }));
+      b.addEventListener("click", () => {
+        stopTimer(); st.part = k; st2.view = "start"; renderParts(); renderFlow();
+        $("#flow").scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+      box.append(b);
+    });
+  }
+
+  function renderFlow() {
+    stopTimer();
+    const box = $("#flow"); box.textContent = "";
+    $("#parts").hidden = st2.view !== "start"; // while answering, show only the question
+    if (st2.view === "ask") return renderAsk(box);
+    if (st2.view === "finish") return renderFinish(box);
+    renderStart(box);
+  }
+
+  function renderStart(box) {
+    const p = PARTS[st.part], ans = st.ans[st.part], answered = ans.filter(Boolean).length;
+    const done = p.done(st.me);
+    box.append(el("h2", { class: "section-title" }, el("span", { text: p.title })),
+      el("p", { class: "muted", text: `${p.sub} · ${p.time}` }));
+    const rules = el("ul", { class: "rules" });
+    p.rules.forEach(r => rules.append(el("li", { text: r })));
+    box.append(rules);
+    if (!whoReady()) {
+      box.append(el("p", { class: "notice", text: "ใส่ชื่อและเลือกทีมด้านบนก่อน แล้วค่อยเริ่ม" }));
+      return;
+    }
+    const resume = answered > 0 && answered < ans.length && !p.timed;
+    const start = el("button", { class: "btn big-cta", type: "button",
+      text: resume ? `ทำต่อจากข้อ ${st2.pos[st.part] + 1}` : done ? "ทำใหม่" : "เริ่มเลย" });
+    start.addEventListener("click", () => {
+      if (!resume) {
+        // timed test always starts clean; others keep earlier choices so a retake is quick
+        if (p.timed || !done) st.ans[st.part] = Array(ans.length).fill(0);
+        st2.pos[st.part] = 0;
+      }
+      st2.timeouts = 0;
+      st2.view = "ask"; saveDraft(); renderFlow();
+      $("#flow").scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+    box.append(start);
+    if (answered === ans.length && !done) {
+      const save = el("button", { class: "linkbtn", type: "button", text: "ตอบครบแล้ว ไปหน้าบันทึก" });
+      save.addEventListener("click", () => { st2.view = "finish"; renderFlow(); });
+      box.append(save);
+    }
+  }
+
+  function renderAsk(box) {
+    const p = PARTS[st.part], ans = st.ans[st.part], i = st2.pos[st.part], q = p.items[i], n = p.items.length;
+    const scale = p.scale; // [{v, label, size, mid}]
+    const pct = Math.round(i / n * 100);
+    const pause = el("button", { class: "linkbtn", type: "button", text: p.timed ? "ออก (เริ่มใหม่ทีหลัง)" : "พักไว้ก่อน" });
+    pause.addEventListener("click", () => { st2.view = "start"; saveDraft(); renderFlow(); });
+    box.append(el("div", { class: "flow__bar" },
+      el("span", { class: "flow__count", text: `${p.title} · ข้อ ${i + 1} / ${n}` }), pause));
+    // timed test shows one bar only (the clock); the count above carries progress
+    if (!p.timed) box.append(el("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(n), "aria-valuenow": String(i) },
+      el("span", { class: "progress__bar", style: `width:${pct}%` })));
+
+    let timerBox = null;
+    if (p.timed) {
+      timerBox = el("div", { class: "timer" },
+        el("div", { class: "timer__track" }, el("span", { class: "timer__fill" })),
+        el("span", { class: "timer__txt" }));
+      box.append(timerBox);
+    }
+    box.append(el("div", { class: "flow__topic", id: "q-topic", text: q.t || "ข้อไหนเป็นตัวคุณมากกว่า" }));
+    const A1 = el("div", { class: "stmt" }, el("span", { class: "stmt__tag", text: "A" }), el("span", { text: q.l }));
+    const B1 = el("div", { class: "stmt" }, el("span", { class: "stmt__tag", text: "B" }), el("span", { text: q.r }));
+    box.append(el("div", { class: "stmts" }, A1, B1));
+
+    const dial = el("div", { class: "dial", role: "radiogroup", "aria-labelledby": "q-topic" });
+    const lean = v => {
+      A1.classList.toggle("is-lean", v != null && v < (scale.length + 1) / 2);
+      B1.classList.toggle("is-lean", v != null && v > (scale.length + 1) / 2);
+    };
+    scale.forEach(o => {
+      const b = el("button", { type: "button", role: "radio", class: o.mid ? "is-mid" : "",
+        "aria-checked": String(ans[i] === o.v), "aria-label": o.aria(q) },
+        el("i", { style: `width:${o.size}px;height:${o.size}px` }));
+      b.addEventListener("click", () => choose(o.v));
+      b.addEventListener("pointerenter", () => lean(o.v));
+      b.addEventListener("pointerleave", () => lean(ans[i] || null));
+      dial.append(b);
+    });
+    const labels = el("div", { class: "dial__labels", "aria-hidden": "true" },
+      el("span", { text: "ใช่ A" }), el("span", { text: p.timed ? "กลางๆ" : "" }), el("span", { text: "ใช่ B" }));
+    box.append(dial, labels);
+    lean(ans[i] || null);
+
+    const nav = el("div", { class: "flow__nav" });
+    if (!p.timed && i > 0) {
+      const back = el("button", { class: "btn btn--ghost", type: "button", text: "← ข้อก่อนหน้า" });
+      back.addEventListener("click", () => { st2.pos[st.part] = i - 1; saveDraft(); renderFlow(); });
+      nav.append(back);
+    } else nav.append(el("span"));
+    if (!p.timed && ans[i]) {
+      const fwd = el("button", { class: "btn btn--ghost", type: "button", text: "ข้อถัดไป →" });
+      fwd.addEventListener("click", () => next());
+      nav.append(fwd);
+    } else nav.append(el("span", { class: "keys", text: `กดปุ่ม 1–${scale.length} บนคีย์บอร์ดได้` }));
+    box.append(nav);
+
+    let locked = false;
+    function choose(v) {
+      if (locked) return;
+      locked = true; stopTimer();
+      ans[i] = v; saveDraft();
+      dial.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-checked", String(scale[j].v === v)));
+      lean(v);
+      setTimeout(next, 260); // short pause so the choice is visible before moving on
+    }
+    function next() {
+      stopTimer();
+      st2.pos[st.part] = Math.min(i + 1, n);
+      st2.view = ans.every(Boolean) && st2.pos[st.part] >= n ? "finish" : "ask";
+      if (st2.view === "ask" && st2.pos[st.part] >= n) st2.pos[st.part] = ans.findIndex(v => !v);
+      saveDraft(); renderFlow();
+    }
+    st2.keyHandler = e => {
+      if (e.target.closest && e.target.closest("input,textarea")) return;
+      const k = Number(e.key);
+      if (k >= 1 && k <= scale.length) { e.preventDefault(); choose(scale[k - 1].v); }
+    };
+    if (p.timed) startTimer(timerBox, () => {
+      // time is up: count as กลางๆ and move on
+      st2.timeouts++;
+      ans[i] = 3; saveDraft(); locked = true; next();
+    });
+    dial.querySelector('[aria-checked="true"]')?.focus({ preventScroll: true });
+  }
+  document.addEventListener("keydown", e => {
+    if (st2.view === "ask" && !$("#panel-quiz").hidden && st2.keyHandler) st2.keyHandler(e);
+  });
+
+  // 20-second countdown that pauses while the tab is hidden
+  function startTimer(box, onEnd) {
+    const total = A.STRENGTH_SECONDS * 1000;
+    let left = total, last = performance.now();
+    const fill = box.querySelector(".timer__fill"), txt = box.querySelector(".timer__txt");
+    const draw = () => {
+      fill.style.width = (left / total * 100) + "%";
+      const secs = Math.ceil(left / 1000);
+      txt.textContent = `เหลือ ${secs} วินาที`;
+      box.classList.toggle("is-low", secs <= 5);
+    };
+    draw();
+    st2.timer = setInterval(() => {
+      const now = performance.now();
+      if (!document.hidden) left -= now - last;
+      last = now;
+      if (left <= 0) { left = 0; draw(); stopTimer(); onEnd(); return; }
+      draw();
+    }, 100);
+  }
+  function stopTimer() { if (st2.timer) { clearInterval(st2.timer); st2.timer = null; } }
+
+  function renderFinish(box) {
+    const p = PARTS[st.part];
+    box.append(el("div", { class: "done-mark", "aria-hidden": "true", text: "✓" }),
+      el("h2", { class: "section-title" }, el("span", { text: `ตอบ${p.title}ครบแล้ว` })));
+    if (p.timed && st2.timeouts) box.append(el("p", { class: "muted", text: `หมดเวลา ${st2.timeouts} ข้อ ข้อเหล่านั้นนับเป็นกลางๆ` }));
+    const save = el("button", { class: "btn big-cta", type: "button", id: "submit", text: "บันทึกและดูผล" });
+    save.addEventListener("click", () => submit(save));
+    box.append(save);
+    if (!p.timed) {
+      const review = el("button", { class: "linkbtn", type: "button", text: "ย้อนกลับไปทบทวนคำตอบ" });
+      review.addEventListener("click", () => { st2.pos[st.part] = 0; st2.view = "ask"; renderFlow(); });
+      box.append(review);
+    }
+  }
+
+  async function submit(btn) {
+    const part = st.part, answers = st.ans[part].slice();
     btn.disabled = true; btn.setAttribute("aria-busy", "true"); btn.textContent = "กำลังบันทึก…";
     let msg, isError = false;
     try {
       st.me = await api("/api/results/" + myId, { method: "PUT",
         body: JSON.stringify({ name: nameVal(), team: st.team, section: part, answers }) });
+      clearDraft(part);
       const next = PART_KEYS.find(k => !PARTS[k].done(st.me));
       msg = `บันทึก${PARTS[part].title}แล้ว` + (next ? ` · ยังเหลือ${PARTS[next].title}` : " · ครบทั้ง 3 ชุดแล้ว");
+      st2.view = "start";
+      if (next) st.part = next;
     } catch (e) {
       if (e.message === "access_code") return;
       // show the result anyway, scored in the browser, and say it was not saved
@@ -209,16 +413,14 @@
       isError = true;
       msg = e.message === "db_not_configured"
         ? "บันทึกไม่สำเร็จ เพราะระบบยังไม่ได้เชื่อมฐานข้อมูล แจ้งผู้ดูแลระบบ"
-        : "บันทึกไม่สำเร็จ ผลนี้ยังไม่ขึ้นในภาพรวมทีม ลองกดบันทึกอีกครั้ง";
-    } finally {
-      btn.removeAttribute("aria-busy"); btn.textContent = "บันทึกและดูผล"; updateProgress();
+        : "บันทึกไม่สำเร็จ ผลนี้ยังไม่ขึ้นในภาพรวมทีม กลับไปที่แท็บแบบทดสอบแล้วกดบันทึกอีกครั้ง";
     }
-    renderParts();
+    renderParts(); renderFlow();
     showTab("tab-me");
     showNotice(msg, isError);
     const target = $("#me-" + part);
     if (target) target.scrollIntoView({ block: "start" });
-  });
+  }
 
   function showNotice(msg, isError) {
     const n = $("#me-notice");
@@ -317,14 +519,14 @@
   function todoCard(part) {
     const p = PARTS[part];
     const go = el("button", { class: "btn", type: "button", text: `ทำ${p.title}` });
-    go.addEventListener("click", () => { st.part = part; renderParts(); renderQuestions(); showTab("tab-quiz"); window.scrollTo({ top: 0 }); });
+    go.addEventListener("click", () => { st.part = part; st2.view = "start"; renderParts(); renderFlow(); showTab("tab-quiz"); window.scrollTo({ top: 0 }); });
     return el("div", { class: "card todo" },
       el("h2", { class: "subhead", text: p.title }),
       el("p", { class: "muted", text: `ยังไม่ได้ทำ · ${p.time}` }), go);
   }
   function retakeBtn(part) {
     const b = el("button", { class: "btn btn--ghost", type: "button", text: "ทำใหม่" });
-    b.addEventListener("click", () => { st.part = part; renderParts(); renderQuestions(); showTab("tab-quiz"); window.scrollTo({ top: 0 }); });
+    b.addEventListener("click", () => { st.part = part; st2.view = "start"; renderParts(); renderFlow(); showTab("tab-quiz"); window.scrollTo({ top: 0 }); });
     return b;
   }
   const partHead = (part, extra) => el("div", { class: "section-title" },
@@ -373,7 +575,12 @@
 
   function renderMyStrengths(row) {
     const box = $("#me-strengths"); box.textContent = "";
-    if (!hasStrengths(row)) { box.append(todoCard("strengths")); return; }
+    if (!hasStrengths(row)) {
+      box.append(todoCard("strengths"));
+      if (Array.isArray(row.strengthAnswers) && row.strengthAnswers.length)
+        box.querySelector(".todo .muted").textContent = "ครั้งที่แล้วตอบกลางๆ หรือหมดเวลาทุกข้อ ระบบจึงยังบอกจุดแข็งไม่ได้ ลองทำใหม่อีกครั้ง";
+      return;
+    }
     const top = el("div", { class: "top3" });
     row.strengths.forEach((k, i) => {
       const d = A.STRENGTHS[k];
@@ -388,7 +595,7 @@
     const card = el("div", { class: "card stack" }, el("h3", { class: "subhead", text: "คะแนนทั้ง 12 จุดแข็ง (เต็ม 8)" }));
     const scores = row.strengthScores || {};
     // when the 3rd place shares its score with others, say so instead of implying a clear winner
-    const third = scores[row.strengths[2]];
+    const third = row.strengths.length === 3 ? scores[row.strengths[2]] : undefined;
     const tied = third != null ? A.STRENGTH_KEYS.filter(k => !row.strengths.includes(k) && scores[k] === third) : [];
     const tieNote = !tied.length ? null : (el("p", { class: "muted",
       text: `${A.STRENGTHS[row.strengths[2]].th} ได้คะแนนเท่ากับ ${tied.map(k => A.STRENGTHS[k].th).join(", ")} (${third} คะแนน) ระบบเลือกอันดับ 3 จากจำนวนครั้งที่คุณตอบ "มาก" และผลเมื่อสองจุดแข็งนี้เจอกันตรงๆ ถือว่าใช้ได้ใกล้เคียงกัน` }));
@@ -617,14 +824,16 @@
       });
       $("#name").value = st.me.name || "";
       if (st.me.team) setTeam(st.me.team);
+      loadDraft();
       st.part = PART_KEYS.find(k => !PARTS[k].done(st.me)) || "style";
-      renderParts(); renderQuestions();
+      renderParts(); renderWho(false);
       if (PART_KEYS.some(k => PARTS[k].done(st.me))) showTab("tab-me");
     } catch { /* first visit: nothing saved yet */ }
   }
   function showApp() { $("#gate").hidden = true; $("#app").hidden = false; }
 
+  loadDraft();
   renderParts();
-  renderQuestions();
+  renderWho(false);
   boot();
 })();

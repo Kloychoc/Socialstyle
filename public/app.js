@@ -42,10 +42,10 @@
     style: {
       title: "สไตล์การสื่อสาร", sub: "Social Style 4 สี", time: "30 ข้อ · 8–10 นาที",
       items: Q, done: r => !!r.style, label: r => S[r.style] && `${S[r.style].name} · สี${S[r.style].color}`,
-      hint: "ตอบตามสิ่งที่คุณทำจริงในที่ทำงาน ไม่ใช่สิ่งที่อยากเป็น เลือกช่องที่ใกล้ข้อความฝั่งซ้ายหรือขวามากกว่า",
+      hint: "ตอบตามสิ่งที่คุณทำจริงเป็นปกติ ไม่ใช่สิ่งที่อยากเป็น เลือกช่องที่ใกล้ข้อความฝั่งซ้ายหรือขวามากกว่า",
       local: ans => score(ans) },
     strengths: {
-      title: "จุดแข็งในการทำงาน", sub: "12 จุดแข็ง", time: "24 คู่ · 5–6 นาที",
+      title: "จุดแข็ง", sub: "12 จุดแข็ง", time: "24 คู่ · 5–6 นาที",
       items: A.STRENGTH_QUESTIONS, pair: true, done: r => Array.isArray(r.strengths) && r.strengths.length > 0,
       label: r => r.strengths.map(k => A.STRENGTHS[k].th).join(", "),
       hint: "แต่ละข้อมีสองประโยคที่ดีทั้งคู่ เลือกฝั่งที่เป็นตัวคุณมากกว่า แม้จะใกล้เคียงกันก็ให้เลือกฝั่งที่ใช่กว่านิดหนึ่ง",
@@ -53,7 +53,7 @@
     type: {
       title: "บุคลิก 4 ตัวอักษร", sub: "แนว MBTI", time: "20 ข้อ · 3–4 นาที",
       items: A.TYPE_QUESTIONS, done: r => !!r.type, label: r => `${r.type} · ${A.TYPES[r.type].th}`,
-      hint: "ตอบตามธรรมชาติของคุณ ทั้งในและนอกที่ทำงาน เลือกช่องที่ใกล้ข้อความฝั่งซ้ายหรือขวามากกว่า",
+      hint: "ตอบตามธรรมชาติของคุณ ไม่ใช่สิ่งที่อยากเป็น เลือกช่องที่ใกล้ข้อความฝั่งซ้ายหรือขวามากกว่า",
       local: ans => A.scoreType(ans) },
   };
   const PART_KEYS = Object.keys(PARTS);

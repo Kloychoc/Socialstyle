@@ -1,4 +1,5 @@
-// Payso Social Style — Express app.
+// Payso Social Style — Express app. Three parts, saved separately per person:
+//   style (Social Style, 30 items) · type (4-letter type, 20 items) · strengths (work strengths, 24 pairs)
 // Railway / local: `npm start` runs it as a normal server that also serves public/.
 // (It also exports the app, so it can run on Vercel unchanged.)
 // Storage: Postgres when DATABASE_URL is set (Railway Postgres), otherwise a local JSON file.
@@ -7,6 +8,19 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { QUESTIONS, score } = require("./public/questions.js");
+const { STRENGTH_QUESTIONS, scoreStrengths, TYPE_QUESTIONS, scoreType } = require("./public/assessments.js");
+
+// Each part: how many answers it needs, how it is scored, and where it is stored.
+// `answersKey` / `fields` are the row keys; `cols` are the matching Postgres columns.
+const SECTIONS = {
+  style:     { n: QUESTIONS.length,           score,              answersKey: "answers",
+               fields: ["a", "r", "style"],               cols: ["a", "r", "style"] },
+  type:      { n: TYPE_QUESTIONS.length,      score: scoreType,      answersKey: "typeAnswers",
+               fields: ["type", "typeScores"],            cols: ["type", "type_scores"] },
+  strengths: { n: STRENGTH_QUESTIONS.length,  score: scoreStrengths, answersKey: "strengthAnswers",
+               fields: ["strengths", "strengthScores"],   cols: ["strengths", "strength_scores"] },
+};
+const ANSWER_COL = { answers: "answers", typeAnswers: "type_answers", strengthAnswers: "strength_answers" };
 
 const ACCESS_CODE = (process.env.ACCESS_CODE || "").trim(); // optional shared passcode for the team
 const TEAMS = ["sales", "marketing"];
@@ -21,7 +35,7 @@ function fileStore() {
     async list() { return Object.values(load()); },
     async get(id) { return load()[id] || null; },
     async upsert(row) {
-      const all = load(); all[row.id] = row;
+      const all = load(); all[row.id] = { ...(all[row.id] || {}), ...row };
       fs.writeFileSync(file + ".tmp", JSON.stringify(all, null, 2));
       fs.renameSync(file + ".tmp", file);
     },
@@ -36,22 +50,39 @@ function pgStore(url) {
   const privateNet = /^(localhost|127\.0\.0\.1)$/.test(host) || host.endsWith(".railway.internal");
   const useSsl = process.env.PGSSL ? process.env.PGSSL === "true" : !privateNet;
   const pool = new Pool({ connectionString: url, max: 5, ssl: useSsl ? { rejectUnauthorized: false } : false });
-  const cols = 'id, name, team, a, r, style, answers, updated_at AS "updatedAt"';
+  const cols = `id, name, team, updated_at AS "updatedAt",
+    answers, a, r, style,
+    type_answers AS "typeAnswers", type, type_scores AS "typeScores",
+    strength_answers AS "strengthAnswers", strengths, strength_scores AS "strengthScores"`;
   return {
     async init() {
       await pool.query(`CREATE TABLE IF NOT EXISTS results (
         id TEXT PRIMARY KEY, name TEXT NOT NULL, team TEXT NOT NULL,
-        a INT NOT NULL, r INT NOT NULL, style TEXT NOT NULL,
-        answers JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+        a INT, r INT, style TEXT, answers JSONB,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+      // Upgrade tables made by the first version (Social Style only, all required).
+      await pool.query(`ALTER TABLE results
+        ALTER COLUMN a DROP NOT NULL, ALTER COLUMN r DROP NOT NULL,
+        ALTER COLUMN style DROP NOT NULL, ALTER COLUMN answers DROP NOT NULL,
+        ADD COLUMN IF NOT EXISTS type_answers JSONB, ADD COLUMN IF NOT EXISTS type TEXT,
+        ADD COLUMN IF NOT EXISTS type_scores JSONB,
+        ADD COLUMN IF NOT EXISTS strength_answers JSONB, ADD COLUMN IF NOT EXISTS strengths JSONB,
+        ADD COLUMN IF NOT EXISTS strength_scores JSONB`);
     },
     async list() { return (await pool.query(`SELECT ${cols} FROM results ORDER BY updated_at`)).rows; },
     async get(id) { return (await pool.query(`SELECT ${cols} FROM results WHERE id = $1`, [id])).rows[0] || null; },
-    async upsert(x) {
+    // Saves name/team plus ONE part; the other parts of the row are left as they are.
+    async upsert(x, sec) {
+      const keys = [sec.answersKey, ...sec.fields];
+      const cols = [ANSWER_COL[sec.answersKey], ...sec.cols];
+      const json = v => (v !== null && typeof v === "object" ? JSON.stringify(v) : v);
+      const vals = [x.id, x.name, x.team, ...keys.map(k => json(x[k]))];
+      const ph = cols.map((_, i) => `$${i + 4}`);
       await pool.query(
-        `INSERT INTO results (id, name, team, a, r, style, answers, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,now())
-         ON CONFLICT (id) DO UPDATE SET name=$2, team=$3, a=$4, r=$5, style=$6, answers=$7, updated_at=now()`,
-        [x.id, x.name, x.team, x.a, x.r, x.style, JSON.stringify(x.answers)]);
+        `INSERT INTO results (id, name, team, ${cols.join(", ")}, updated_at)
+         VALUES ($1, $2, $3, ${ph.join(", ")}, now())
+         ON CONFLICT (id) DO UPDATE SET name = $2, team = $3, ${cols.map((c, i) => `${c} = ${ph[i]}`).join(", ")}, updated_at = now()`,
+        vals);
     },
   };
 }
@@ -100,11 +131,12 @@ app.use("/api", async (_req, res, next) => {
   try { await ensureReady(); next(); } catch (e) { next(e); }
 });
 
-// Everyone sees name, team and position. Individual answers stay on the server.
+// Everyone sees name, team and each person's results. Individual answers stay on the server.
 app.get("/api/results", async (_req, res, next) => {
   try {
     const rows = await store.list();
-    res.json(rows.map(({ id, name, team, a, r, style, updatedAt }) => ({ id, name, team, a, r, style, updatedAt })));
+    res.json(rows.map(({ id, name, team, a, r, style, type, strengths, updatedAt }) =>
+      ({ id, name, team, a, r, style, type, strengths, updatedAt })));
   } catch (e) { next(e); }
 });
 
@@ -125,14 +157,17 @@ app.put("/api/results/:id", async (req, res, next) => {
     if (!ID_RE.test(id)) return res.status(400).json({ error: "bad_id" });
     if (!name) return res.status(400).json({ error: "name_required" });
     if (!TEAMS.includes(body.team)) return res.status(400).json({ error: "bad_team" });
+    const sec = SECTIONS[body.section || "style"]; // first version sent no section: it was always style
+    if (!sec) return res.status(400).json({ error: "bad_section" });
     const answers = body.answers;
-    if (!Array.isArray(answers) || answers.length !== QUESTIONS.length ||
+    if (!Array.isArray(answers) || answers.length !== sec.n ||
         !answers.every(v => Number.isInteger(v) && v >= 1 && v <= 4)) {
       return res.status(400).json({ error: "bad_answers" });
     }
-    const row = { id, name, team: body.team, answers, ...score(answers), updatedAt: new Date().toISOString() };
-    await store.upsert(row); // scored on the server, never trusted from the client
-    res.json(row);
+    // scored on the server, never trusted from the client
+    const row = { id, name, team: body.team, [sec.answersKey]: answers, ...sec.score(answers), updatedAt: new Date().toISOString() };
+    await store.upsert(row, sec);
+    res.json(await store.get(id));
   } catch (e) { next(e); }
 });
 

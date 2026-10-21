@@ -99,6 +99,15 @@ const store = DB_URL ? pgStore(DB_URL) : (process.env.VERCEL ? null : fileStore(
 let ready = null; // init once per instance, on the first request
 const ensureReady = () => (ready ||= store.init().catch(e => { ready = null; throw e; }));
 
+// Results are re-scored from the stored answers when read, so a scoring fix applies to everyone
+// who already took the test (strength ranking tie-break changed after launch).
+function fresh(row) {
+  if (row && Array.isArray(row.strengthAnswers) && row.strengthAnswers.length === STRENGTH_QUESTIONS.length) {
+    return { ...row, ...scoreStrengths(row.strengthAnswers) };
+  }
+  return row;
+}
+
 // ---------- app ----------
 const app = express();
 app.disable("x-powered-by");
@@ -134,7 +143,7 @@ app.use("/api", async (_req, res, next) => {
 // Everyone sees name, team and each person's results. Individual answers stay on the server.
 app.get("/api/results", async (_req, res, next) => {
   try {
-    const rows = await store.list();
+    const rows = (await store.list()).map(fresh);
     res.json(rows.map(({ id, name, team, a, r, style, type, strengths, updatedAt }) =>
       ({ id, name, team, a, r, style, type, strengths, updatedAt })));
   } catch (e) { next(e); }
@@ -144,7 +153,7 @@ app.get("/api/results", async (_req, res, next) => {
 app.get("/api/results/:id", async (req, res, next) => {
   try {
     if (!ID_RE.test(req.params.id)) return res.status(400).json({ error: "bad_id" });
-    const row = await store.get(req.params.id);
+    const row = fresh(await store.get(req.params.id));
     return row ? res.json(row) : res.status(404).json({ error: "not_found" });
   } catch (e) { next(e); }
 });
@@ -167,7 +176,7 @@ app.put("/api/results/:id", async (req, res, next) => {
     // scored on the server, never trusted from the client
     const row = { id, name, team: body.team, [sec.answersKey]: answers, ...sec.score(answers), updatedAt: new Date().toISOString() };
     await store.upsert(row, sec);
-    res.json(await store.get(id));
+    res.json(fresh(await store.get(id)));
   } catch (e) { next(e); }
 });
 

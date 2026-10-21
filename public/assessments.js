@@ -11,11 +11,13 @@
 // Answer scale for both: 1..4 = ซ้ายมาก, ค่อนข้างซ้าย, ค่อนข้างขวา, ขวามาก (same UI as Social Style).
 (function (root) {
   // ---------------- strengths ----------------
+  // The 4 groups follow the same split as Gallup's 4 CliftonStrengths domains
+  // (Executing / Influencing / Relationship Building / Strategic Thinking), in our own words.
   const GROUPS = {
-    do:    { th: "ลงมือทำ",      en: "Get it done" },
-    move:  { th: "ขับเคลื่อนคน",  en: "Move people" },
-    care:  { th: "ดูแลคน",       en: "Care for people" },
-    think: { th: "คิดล่วงหน้า",   en: "Think ahead" },
+    do:    { th: "ลงมือทำ",          en: "Get it done" },
+    move:  { th: "ขับเคลื่อนคน",      en: "Move people" },
+    care:  { th: "สร้างความสัมพันธ์",  en: "Build relationships" },
+    think: { th: "คิดเชิงกลยุทธ์",     en: "Think it through" },
   };
 
   const STRENGTHS = {
@@ -134,14 +136,33 @@
   }));
 
   // answer 1..4 -> points: 1 = left +2, 2 = left +1, 3 = right +1, 4 = right +2. Each strength 0..8.
+  // Ranking (Gallup ranks CliftonStrengths by score on "intensity of self-description" and breaks ties
+  // with secondary factors; we do the same in spirit, with what one answer sheet can tell us):
+  //   1. points
+  //   2. strong picks: how many times the person chose "มาก" (1 or 4) for this strength
+  //   3. head-to-head: among strengths still tied, wins in the pairs where they met each other
+  //   4. still tied: an order seeded from this person's own answers. Fair across people (no strength is
+  //      favoured), and the same answers always give the same result. The page tells the person about the tie.
   function scoreStrengths(answers) {
     const pts = Object.fromEntries(STRENGTH_KEYS.map(k => [k, 0]));
+    const strong = Object.fromEntries(STRENGTH_KEYS.map(k => [k, 0]));
+    const beat = {}; // beat[a][b] = 1 when a won the pair against b
     STRENGTH_QUESTIONS.forEach((q, i) => {
       const v = answers[i];
-      if (v <= 2) pts[q.lk] += 3 - v; else pts[q.rk] += v - 2;
+      const [win, lose] = v <= 2 ? [q.lk, q.rk] : [q.rk, q.lk];
+      pts[win] += v === 1 || v === 4 ? 2 : 1;
+      if (v === 1 || v === 4) strong[win]++;
+      (beat[win] = beat[win] || {})[lose] = 1;
     });
-    // ranked high -> low; equal scores keep the fixed STRENGTH_KEYS order
-    const ranked = [...STRENGTH_KEYS].sort((a, b) => pts[b] - pts[a] || STRENGTH_KEYS.indexOf(a) - STRENGTH_KEYS.indexOf(b));
+    let seed = answers.reduce((h, v, i) => (h * 31 + v * (i + 7)) >>> 0, 2166136261);
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296);
+    const shuffled = [...STRENGTH_KEYS];
+    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+    const key = k => pts[k] * 100 + strong[k];
+    const h2h = Object.fromEntries(STRENGTH_KEYS.map(k => [k,
+      STRENGTH_KEYS.filter(o => o !== k && key(o) === key(k) && beat[k] && beat[k][o]).length]));
+    const ranked = [...STRENGTH_KEYS].sort((a, b) =>
+      key(b) - key(a) || h2h[b] - h2h[a] || shuffled.indexOf(a) - shuffled.indexOf(b));
     return { strengthScores: pts, strengths: ranked.slice(0, 3) };
   }
 

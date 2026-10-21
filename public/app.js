@@ -391,7 +391,7 @@
     const third = scores[row.strengths[2]];
     const tied = third != null ? A.STRENGTH_KEYS.filter(k => !row.strengths.includes(k) && scores[k] === third) : [];
     const tieNote = !tied.length ? null : (el("p", { class: "muted",
-      text: `${A.STRENGTHS[row.strengths[2]].th} ได้คะแนนเท่ากับ ${tied.map(k => A.STRENGTHS[k].th).join(", ")} (${third} คะแนน) ถือว่าเป็นจุดแข็งอันดับ 3 ได้เท่าๆ กัน` }));
+      text: `${A.STRENGTHS[row.strengths[2]].th} ได้คะแนนเท่ากับ ${tied.map(k => A.STRENGTHS[k].th).join(", ")} (${third} คะแนน) ระบบเลือกอันดับ 3 จากจำนวนครั้งที่คุณตอบ "มาก" และผลเมื่อสองจุดแข็งนี้เจอกันตรงๆ ถือว่าใช้ได้ใกล้เคียงกัน` }));
     if (Object.keys(scores).length) {
       card.append(barList(Object.keys(A.GROUPS).map(g => ({
         group: A.GROUPS[g].th,

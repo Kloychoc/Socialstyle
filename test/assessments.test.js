@@ -36,6 +36,21 @@ for (const k of A.STRENGTH_KEYS) {
   assert.strictEqual(total, ans.reduce((s, v) => s + (v === 1 || v === 4 ? 2 : 1), 0));
 }
 
+// ties never favour a strength: with random answers each strength lands in the top 3 about 25% of the time
+{
+  // mulberry32: a small PRNG with good spread (a plain LCG gives lopsided answer sheets for some seeds)
+  let seed = 9; const rnd = () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const N = 60000, hits = Object.fromEntries(A.STRENGTH_KEYS.map(k => [k, 0]));
+  for (let t = 0; t < N; t++) A.scoreStrengths(Q.map(() => 1 + Math.floor(rnd() * 4))).strengths.forEach(k => hits[k]++);
+  for (const [k, n] of Object.entries(hits)) {
+    const pct = n / N * 100;
+    assert.ok(pct > 23.5 && pct < 26.5, `${k} reaches the top 3 ${pct.toFixed(1)}% of the time (fair is 25%)`);
+  }
+  const ans = Q.map((_, i) => (i % 4) + 1);
+  assert.deepStrictEqual(A.scoreStrengths(ans).strengths, A.scoreStrengths(ans).strengths, "same answers, same result");
+}
+
 // ---- 4-letter type ----
 assert.strictEqual(A.TYPE_QUESTIONS.length, 20);
 for (const ax of Object.keys(A.PAIR_OF)) {
@@ -65,5 +80,5 @@ assert.strictEqual(reached.size, 16);
   }
 }
 
-console.log("OK  strengths: 24 pairs, each of 12 strengths 4x vs 4 different strengths; scoring checked");
+console.log("OK  strengths: 24 pairs, each of 12 strengths 4x vs 4 different strengths; ties are fair (each ~25% top-3)");
 console.log("    4-letter type: 20 items, all 16 types reachable, no ties possible");

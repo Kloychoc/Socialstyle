@@ -6,12 +6,14 @@
 <title>Payso Team Profile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: one narrow column, three tabs (quiz / my results / team); the 2x2 style grid is the recurring motif */
+/* Layout: one narrow column, three tabs (quiz / my results / team). Friendly look: rounded display face,
+   soft pastel cards, one Lucide line icon per idea, the 4 style colours as little bubbles. */
 :root{
   /* neutrals + brand (Payso CI) */
-  --bg:#F6F7FC; --surface:#FFFFFF; --ink:#141A3A; --muted:#5B6385; --line:#DDE1F2; --tint:#EBEEFF;
+  --bg:#F4F5FF; --surface:#FFFFFF; --ink:#141A3A; --muted:#5B6385; --line:#E1E4F7; --tint:#ECEFFF;
+  --shadow:0 1px 2px rgba(24,43,186,.05),0 8px 24px rgba(24,43,186,.07);
   --brand:#182BBA; --brand-hover:#1424A0; --focus:#114EF4; --on-brand:#FFFFFF; --danger:#B42328;
   /* style colors: fill = backgrounds, ink = text/dots (all ink tokens >= 4.5:1 on their tint) */
   --driver-ink:#B42328; --driver-bg:#FDECEC;
@@ -21,16 +23,18 @@
   --on-tone:#FFFFFF;
   /* type (Thai needs >= 13px for comfortable reading) */
   --font:"Noto Sans Thai","Leelawadee UI","Thonburi",system-ui,sans-serif;
+  --display:"Mitr","Noto Sans Thai","Leelawadee UI",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   --t-xs:13px; --t-sm:14px; --t-base:16px; --t-lg:20px; --t-xl:28px; --t-2xl:clamp(28px,5vw,36px);
   /* spacing + shape */
   --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px;
-  --r-sm:8px; --r-md:12px; --r-pill:999px;
+  --r-sm:12px; --r-md:18px; --r-lg:24px; --r-pill:999px;
   --dur:.15s;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
   --bg:#0D1024; --surface:#161A35; --ink:#E9ECFA; --muted:#A3AACD; --line:#2A3060; --tint:#1D2350;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
   --brand:#8FA0FF; --brand-hover:#A9B6FF; --focus:#A9B6FF; --on-brand:#0D1024; --danger:#FF8A8D;
   --driver-ink:#FF8A8D; --driver-bg:#3A1A22;
   --expressive-ink:#F2BE3A; --expressive-bg:#3A2F12;
@@ -43,7 +47,15 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--t-base);line-height:1.65;
   padding-inline:var(--s-4);padding-block:env(safe-area-inset-top,0px) calc(var(--s-6) + env(safe-area-inset-bottom,0px))}
-h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance}
+h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance;font-family:var(--display);font-weight:500}
+/* icons: Lucide line icons from the inline sprite at the top of <body> */
+.ic{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+.badge-ic{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;border-radius:14px;background:var(--tone-bg,var(--tint));color:var(--tone-ink,var(--brand))}
+.badge-ic .ic{width:22px;height:22px}
+.badge-ic--lg{width:64px;height:64px;border-radius:22px}
+.badge-ic--lg .ic{width:34px;height:34px}
+.badge-ic--sm{width:28px;height:28px;border-radius:10px}
+.badge-ic--sm .ic{width:16px;height:16px}
 p{margin:0}
 [hidden]{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -63,24 +75,28 @@ p{margin:0}
 /* header */
 .masthead{padding-block:var(--s-6) var(--s-2);display:grid;gap:var(--s-2)}
 .eyebrow{font-size:var(--t-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--brand);font-weight:700}
-.masthead h1{font-size:var(--t-2xl);font-weight:800}
+.masthead h1{font-size:var(--t-2xl);font-weight:600}
+.bubbles{display:inline-flex;gap:5px;margin-right:var(--s-2);vertical-align:1px}
+.bubbles i{width:10px;height:10px;border-radius:50%;display:block}
+.bubbles i:nth-child(1){background:var(--driver-ink)} .bubbles i:nth-child(2){background:var(--expressive-ink)}
+.bubbles i:nth-child(3){background:var(--amiable-ink)} .bubbles i:nth-child(4){background:var(--analytical-ink)}
 .lede{color:var(--muted);max-width:62ch}
 
 /* tabs */
 .tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:var(--s-1);
   padding-block:var(--s-3);border-bottom:1px solid var(--line);margin-bottom:var(--s-5);overflow-x:auto}
-.tab{font:inherit;font-size:var(--t-sm);font-weight:600;border:0;background:transparent;color:var(--muted);
+.tab{font:inherit;font-size:var(--t-sm);font-weight:600;border:0;background:transparent;color:var(--muted);display:inline-flex;align-items:center;gap:6px;
   padding:var(--s-2) var(--s-4);border-radius:var(--r-pill);cursor:pointer;white-space:nowrap;transition:background var(--dur)}
 .tab:hover{background:var(--tint);color:var(--ink)}
 .tab[aria-selected="true"]{background:var(--brand);color:var(--on-brand)}
 
 /* card, notice */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-5)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s-5);box-shadow:var(--shadow)}
 .notice{font-size:var(--t-sm);padding:var(--s-3) var(--s-4);border-radius:var(--r-sm);background:var(--tint)}
 .notice--error{color:var(--danger)}
 
 /* button */
-.btn{font:inherit;font-size:var(--t-sm);font-weight:700;border:1px solid var(--brand);border-radius:var(--r-sm);
+.btn{font:inherit;font-size:var(--t-sm);font-weight:700;border:1px solid var(--brand);border-radius:var(--r-pill);display:inline-flex;align-items:center;justify-content:center;gap:8px;
   padding:var(--s-3) var(--s-5);cursor:pointer;background:var(--brand);color:var(--on-brand);transition:background var(--dur)}
 .btn:hover:not(:disabled){background:var(--brand-hover);border-color:var(--brand-hover)}
 .btn--ghost{background:transparent;color:var(--brand);border-color:var(--line)}
@@ -95,7 +111,7 @@ p{margin:0}
 .input:hover{border-color:var(--muted)}
 
 /* segmented control */
-.segmented{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.segmented{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden;background:var(--surface)}
 .segmented button{font:inherit;font-size:var(--t-sm);font-weight:600;border:0;background:var(--surface);color:var(--muted);
   padding:var(--s-2) var(--s-4);cursor:pointer;transition:background var(--dur)}
 .segmented button:hover{background:var(--tint)}
@@ -123,10 +139,14 @@ p{margin:0}
 .chip{display:inline-flex;align-items:center;gap:var(--s-2);font-size:var(--t-xs);font-weight:700;padding:2px var(--s-3);
   border-radius:var(--r-pill);color:var(--tone-ink);background:var(--tone-bg)}
 .chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.chip:has(.ic)::before{display:none}
+.chip .ic{width:14px;height:14px}
 
 /* result */
-.hero{display:grid;gap:var(--s-1);padding:var(--s-5);border-radius:var(--r-md);background:var(--tone-bg)}
-.hero__name{font-size:var(--t-xl);font-weight:800;color:var(--tone-ink)}
+.hero{display:grid;grid-template-columns:auto 1fr;column-gap:var(--s-4);row-gap:var(--s-1);align-items:center;padding:var(--s-5);border-radius:var(--r-lg);background:var(--tone-bg)}
+.hero > .badge-ic{grid-row:1 / 4;background:var(--surface)}
+.hero > :not(.badge-ic){grid-column:2}
+.hero__name{font-family:var(--display);font-size:var(--t-xl);font-weight:600;color:var(--tone-ink)}
 .hero__th{font-size:var(--t-lg);font-weight:600;color:var(--ink)}
 .scores{display:flex;flex-wrap:wrap;gap:var(--s-4);font-size:var(--t-sm);color:var(--muted)}
 .scores b{font-family:var(--mono);color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
@@ -164,7 +184,8 @@ p{margin:0}
 .spot ul{margin:0;padding-left:18px;font-size:var(--t-sm)}
 .spot__label{font-size:var(--t-xs);font-weight:700;color:var(--tone-ink)}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-2)}
-.tile{border-radius:var(--r-md);padding:var(--s-3);display:grid;background:var(--tone-bg)}
+.tile{border-radius:var(--r-lg);padding:var(--s-3) var(--s-4);display:grid;background:var(--tone-bg);position:relative}
+.tile > .ic{position:absolute;top:var(--s-3);right:var(--s-3);color:var(--tone-ink);width:22px;height:22px;opacity:.85}
 .tile__label{font-size:var(--t-xs);font-weight:700;color:var(--tone-ink)}
 .tile__unit{font-size:var(--t-xs);color:var(--muted)}
 .tile__num{font-size:var(--t-xl);font-family:var(--mono);font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums}
@@ -180,7 +201,7 @@ p{margin:0}
 .person:hover{background:var(--tint)}
 .person.is-sel{background:var(--tone-bg);box-shadow:inset 3px 0 0 var(--tone-ink)}
 .badge{font-size:var(--t-xs);color:var(--muted);border:1px solid var(--line);border-radius:var(--r-pill);padding:0 var(--s-2);white-space:nowrap}
-.avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:var(--t-sm);
+.avatar{width:36px;height:36px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:var(--t-sm);
   background:var(--tone-ink);color:var(--on-tone)}
 .person__info{min-width:0}
 .person__name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -190,16 +211,18 @@ p{margin:0}
 footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:68ch}
 /* part picker */
 .parts{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-2)}
-.part{font:inherit;text-align:left;display:grid;gap:2px;align-content:start;padding:var(--s-3) var(--s-4);border:1px solid var(--line);
+.part{font:inherit;text-align:left;display:grid;grid-template-columns:auto 1fr;column-gap:var(--s-3);row-gap:2px;align-content:start;align-items:center;padding:var(--s-3) var(--s-4);border:1px solid var(--line);box-shadow:var(--shadow);
   border-radius:var(--r-md);background:var(--surface);color:var(--ink);cursor:pointer;transition:background var(--dur)}
 .part:hover{background:var(--tint)}
 .part[aria-pressed="true"]{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
-.part__title{font-weight:700}
+.part .badge-ic{grid-row:1 / 4}
+.part__title{font-family:var(--display);font-weight:500;font-size:var(--t-base)}
 .part__meta{font-size:var(--t-xs);color:var(--muted)}
 .part__status{font-size:var(--t-xs);font-weight:700;color:var(--muted)}
 .part__status--done{color:var(--brand)}
 .who-line{display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-3);align-items:baseline;font-size:var(--t-sm);color:var(--muted)}
 .who-line b{color:var(--ink)}
+.flow > .linkbtn{justify-self:start}
 .linkbtn{font:inherit;font-size:var(--t-sm);font-weight:600;color:var(--brand);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 
 /* one question at a time */
@@ -210,9 +233,10 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 .stmts{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}
 .stmt{display:grid;gap:var(--s-2);align-content:start;padding:var(--s-3) var(--s-4);border:1.5px solid var(--line);border-radius:var(--r-md);
   background:var(--surface);font-size:var(--t-base);line-height:1.5;transition:border-color var(--dur),background var(--dur)}
-.stmt__tag{font-family:var(--mono);font-size:var(--t-xs);font-weight:500;color:var(--muted)}
+.stmt__tag{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--tint);color:var(--brand);
+  font-family:var(--display);font-size:var(--t-sm);font-weight:600}
 .stmt.is-lean{border-color:var(--brand);background:var(--tint)}
-.stmt.is-lean .stmt__tag{color:var(--brand)}
+.stmt.is-lean .stmt__tag{color:var(--on-brand);background:var(--brand)}
 .dial{display:flex;justify-content:space-between;align-items:center;gap:var(--s-1);padding-inline:var(--s-2)}
 .dial button{flex:1;display:grid;place-items:center;min-height:56px;background:none;border:0;cursor:pointer;padding:0}
 .dial i{display:block;border-radius:50%;border:2.5px solid var(--brand);background:var(--surface);transition:transform var(--dur),background var(--dur)}
@@ -233,7 +257,21 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 .keys{font-size:var(--t-xs);color:var(--muted)}
 .rules{margin:0;padding-left:20px;display:grid;gap:var(--s-1)}
 .big-cta{justify-self:start;padding:var(--s-3) var(--s-6);font-size:var(--t-base)}
-.done-mark{font-size:40px;line-height:1}
+.celebrate{position:relative;justify-self:start}
+.celebrate .badge-ic{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both}
+.celebrate i{position:absolute;width:8px;height:8px;border-radius:50%;opacity:0;animation:fly .9s ease-out .15s both}
+.celebrate i:nth-child(2){background:var(--driver-ink);--x:-34px;--y:-26px}
+.celebrate i:nth-child(3){background:var(--expressive-ink);--x:40px;--y:-30px}
+.celebrate i:nth-child(4){background:var(--amiable-ink);--x:-30px;--y:34px}
+.celebrate i:nth-child(5){background:var(--analytical-ink);--x:44px;--y:30px}
+.celebrate i{left:28px;top:28px}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fly{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--x),var(--y))}}
+.start-head{display:flex;align-items:center;gap:var(--s-3)}
+.rules li::marker{color:var(--brand)}
+.flow__count{display:inline-flex;align-items:center;gap:6px}
+.timer__txt{display:inline-flex;align-items:center;gap:4px}
+.q-ic{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){.timer__fill{transition:none!important}}
 
 /* my results */
@@ -245,7 +283,8 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 .section-title h2{font-size:var(--t-lg)}
 .todo{display:grid;gap:var(--s-2);justify-items:start}
 .top3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--s-3)}
-.sk{display:grid;gap:var(--s-1);align-content:start;padding:var(--s-4);border-radius:var(--r-md);background:var(--tint)}
+.sk{display:grid;gap:var(--s-1);align-content:start;padding:var(--s-4);border-radius:var(--r-lg);background:var(--tint)}
+.sk .badge-ic{background:var(--surface);color:var(--brand);margin-bottom:var(--s-1)}
 .sk__rank{font-family:var(--mono);font-size:var(--t-xs);color:var(--muted)}
 .sk__name{font-size:var(--t-lg);font-weight:800}
 .sk__en{font-size:var(--t-xs);color:var(--muted);font-weight:600}
@@ -273,7 +312,7 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 .bar__val{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
 .bar__who{grid-column:2 / 4;font-size:var(--t-xs);color:var(--muted);margin-top:-6px}
 .bar.is-gap .bar__name{color:var(--muted)}
-.subhead{font-size:var(--t-base);font-weight:700}
+.subhead{font-family:var(--display);font-size:var(--t-lg);font-weight:500;display:flex;align-items:center;gap:var(--s-2)}
 .types{display:flex;flex-wrap:wrap;gap:var(--s-2)}
 .spot__row{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center;font-size:var(--t-sm)}
 .spot__key{font-size:var(--t-xs);font-weight:700;color:var(--muted);min-width:64px}
@@ -296,13 +335,60 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
   .q-label{font-size:19px} .q-sub,.axis{font-size:16px} .dot__txt{font-size:17px} .dot__tagtxt{font-size:17px}
   .card{padding:var(--s-4)}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+<!-- Lucide icons (ISC License, https://lucide.dev) -->
+<symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" /> <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09" /> <path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z" /> <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05" /></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /> <path d="M20 2v4" /> <path d="M22 4h-4" /> <circle cx="4" cy="20" r="2" /></symbol>
+<symbol id="i-heart-handshake" viewBox="0 0 24 24"><path d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762" /></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></symbol>
+<symbol id="i-message-circle-heart" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" /> <path d="M7.828 13.07A3 3 0 0 1 12 8.764a3 3 0 0 1 5.004 2.224 3 3 0 0 1-.832 2.083l-3.447 3.62a1 1 0 0 1-1.45-.001z" /></symbol>
+<symbol id="i-medal" viewBox="0 0 24 24"><path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" /></symbol>
+<symbol id="i-shapes" viewBox="0 0 24 24"><path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z" /> <rect x="3" y="14" width="7" height="7" rx="1" /> <circle cx="17.5" cy="17.5" r="3.5" /></symbol>
+<symbol id="i-pencil-line" viewBox="0 0 24 24"><path d="M13 21h8" /> <path d="m15 5 4 4" /> <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /></symbol>
+<symbol id="i-user-round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" /> <path d="M20 21a8 8 0 0 0-16 0" /></symbol>
+<symbol id="i-users-round" viewBox="0 0 24 24"><path d="M18 21a8 8 0 0 0-16 0" /> <circle cx="10" cy="8" r="5" /> <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" /></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528" /></symbol>
+<symbol id="i-list-checks" viewBox="0 0 24 24"><path d="M13 5h8" /> <path d="M13 12h8" /> <path d="M13 19h8" /> <path d="m3 17 2 2 4-4" /> <path d="m3 7 2 2 4-4" /></symbol>
+<symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></symbol>
+<symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" /> <path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14" /> <path d="M8 6v8" /></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <path d="M16 3.128a4 4 0 0 1 0 7.744" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <circle cx="9" cy="7" r="4" /></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" /> <path d="M5 21h14" /></symbol>
+<symbol id="i-ear" viewBox="0 0 24 24"><path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0" /> <path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4" /></symbol>
+<symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /></symbol>
+<symbol id="i-sprout" viewBox="0 0 24 24"><path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" /> <path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" /> <path d="M5 21h14" /></symbol>
+<symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /> <path d="M18 17V9" /> <path d="M13 17V5" /> <path d="M8 17v-3" /></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /></symbol>
+<symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /></symbol>
+<symbol id="i-hammer" viewBox="0 0 24 24"><path d="m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9" /> <path d="m18 15 4-4" /> <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5" /></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" /></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></symbol>
+<symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 18V5" /> <path d="M15 13a4.17 4.17 0 01-3-4 4.17 4.17 0 01-3 4" /> <path d="M17.707 6.294A3 3 0 1012 5a3 3 0 10-5.707 1.294" /> <path d="M17.996 5.125a4 4 0 012.526 5.77" /> <path d="M18 18a4 4 0 002-7.465" /> <path d="M19.967 17.482a4 4 0 11-7.967.517 4 4 0 11-7.967-.517" /> <path d="M6 18a4 4 0 01-2-7.465" /> <path d="M6.004 5.125a4 4 0 00-2.526 5.77" /></symbol>
+<symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2" /> <line x1="12" x2="15" y1="14" y2="11" /> <circle cx="12" cy="14" r="8" /></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /> <path d="M19 12H5" /></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol>
+<symbol id="i-coffee" viewBox="0 0 24 24"><path d="M10 2v2" /> <path d="M14 2v2" /> <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" /> <path d="M6 2v2" /></symbol>
+<symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79" /> <path d="M4 3h.01" /> <path d="M22 8h.01" /> <path d="M15 2h.01" /> <path d="M22 20h.01" /> <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" /> <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" /> <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" /> <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" /></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+<symbol id="i-battery-charging" viewBox="0 0 24 24"><path d="m11 7-3 5h4l-3 5" /> <path d="M14.856 6H16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.935" /> <path d="M22 14v-4" /> <path d="M5.14 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2.936" /></symbol>
+<symbol id="i-telescope" viewBox="0 0 24 24"><path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44" /> <path d="m13.56 11.747 4.332-.924" /> <path d="m16 21-3.105-6.21" /> <path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z" /> <path d="m6.158 8.633 1.114 4.456" /> <path d="m8 21 3.105-6.21" /> <circle cx="12" cy="13" r="2" /></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18" /> <path d="m19 8 3 8a5 5 0 0 1-6 0zV7" /> <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1" /> <path d="m5 8 3 8a5 5 0 0 1-6 0zV7" /> <path d="M7 21h10" /></symbol>
+<symbol id="i-calendar-check" viewBox="0 0 24 24"><path d="M8 2v3" /> <path d="M16 2v3" /> <rect x="3" y="3" width="18" height="18" rx="2" /> <path d="M3 9h18" /> <path d="m9 15 2 2 4-4" /></symbol>
+<symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4" /> <path d="m18 2 4 4-4 4" /> <path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22" /> <path d="M2 6h1.972a4 4 0 0 1 3.6 2.2" /> <path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45" /></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" /></symbol>
+<symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></symbol>
+<symbol id="i-smile" viewBox="0 0 24 24"><path d="M15 10V9" /> <path d="M16.472 15a6 6 0 01-8.943 0" /> <path d="M9 10V9" /> <circle cx="12" cy="12" r="10" /></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol>
+</svg>
 <div class="wrap">
   <header class="masthead">
-    <div class="eyebrow">Payso · Sales &amp; Marketing</div>
+    <div class="eyebrow"><span class="bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Payso · Sales &amp; Marketing</div>
     <h1>เรารู้จักกันแค่ไหน?</h1>
     <p class="lede">แบบทดสอบ 3 ชุด ทำแยกกันได้ ทำชุดไหนก่อนก็ได้: สไตล์การสื่อสาร (Social Style) จุดแข็ง และบุคลิก 4 ตัวอักษร คำถามเป็นเรื่องชีวิตประจำวัน ใครก็ตอบได้ ผลของทุกคนรวมเป็นภาพของทีม เพื่อให้รู้ว่าควรคุยกับใครแบบไหน และใครเก่งเรื่องอะไร</p>
   </header>
@@ -320,16 +406,16 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
 
   <div id="app" hidden>
     <nav class="tabs" role="tablist" aria-label="ส่วนของหน้า">
-      <button class="tab" role="tab" id="tab-quiz" aria-controls="panel-quiz" aria-selected="true">แบบทดสอบ</button>
-      <button class="tab" role="tab" id="tab-me" aria-controls="panel-me" aria-selected="false" tabindex="-1">ผลของฉัน</button>
-      <button class="tab" role="tab" id="tab-team" aria-controls="panel-team" aria-selected="false" tabindex="-1">ภาพรวมทีม</button>
+      <button class="tab" role="tab" id="tab-quiz" aria-controls="panel-quiz" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-pencil-line"/></svg>แบบทดสอบ</button>
+      <button class="tab" role="tab" id="tab-me" aria-controls="panel-me" aria-selected="false" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-user-round"/></svg>ผลของฉัน</button>
+      <button class="tab" role="tab" id="tab-team" aria-controls="panel-team" aria-selected="false" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-users-round"/></svg>ภาพรวมทีม</button>
     </nav>
 
     <!-- QUIZ -->
     <section class="stack" id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz">
       <!-- who you are: full form until filled, then one compact line -->
       <div class="card stack" id="who-form">
-        <h2 class="subhead">เริ่มจากบอกเราว่าคุณคือใคร</h2>
+        <h2 class="subhead"><span class="badge-ic badge-ic--sm" aria-hidden="true"><svg class="ic"><use href="#i-smile"/></svg></span>สวัสดี! เริ่มจากบอกเราว่าคุณคือใคร</h2>
         <div class="row row--between">
           <label class="field" for="name">ชื่อเล่นหรือชื่อที่ทีมเรียก
             <input class="input" id="name" maxlength="40" autocomplete="nickname" placeholder="เช่น ก้อย">
@@ -374,7 +460,7 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
       <p class="muted" id="team-done"></p>
       <div class="tiles" id="tiles"></div>
       <div class="card stack">
-        <h3 class="subhead">แผนที่ Social Style</h3>
+        <h3 class="subhead"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg>แผนที่ Social Style</h3>
         <div class="map" id="team-map"></div>
         <div class="legend">
           <span><i class="legend__me"></i>วงขอบน้ำเงิน = คุณ</span>
@@ -387,7 +473,7 @@ footer{margin-top:var(--s-6);font-size:var(--t-xs);color:var(--muted);max-width:
       <div class="card stack" id="team-strengths"></div>
       <div class="card stack" id="team-types"></div>
       <div class="card">
-        <h3 class="subhead">รายชื่อตามสไตล์</h3>
+        <h3 class="subhead"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>รายชื่อตามสไตล์</h3>
         <div id="people"></div>
       </div>
       <p class="notice notice--error" id="team-error" hidden>โหลดข้อมูลทีมไม่สำเร็จ ระบบจะลองใหม่อัตโนมัติ</p>

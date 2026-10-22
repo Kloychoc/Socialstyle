@@ -73,6 +73,30 @@
   const PART_KEYS = Object.keys(PARTS);
   const ANS_KEY = { style: "answers", strengths: "strengthAnswers", type: "typeAnswers" };
 
+  // ---------- icons (Lucide, inline sprite in index.html) ----------
+  const ICON = {
+    part: { style: "message-circle-heart", strengths: "medal", type: "shapes" },
+    style: { driver: "rocket", expressive: "sparkles", amiable: "heart-handshake", analytical: "search" },
+    group: { do: "hammer", move: "flame", care: "heart", think: "brain" },
+    strength: { closer: "flag", organizer: "list-checks", dependable: "shield-check", persuader: "megaphone",
+      connector: "users", captain: "crown", listener: "ear", teamglue: "puzzle", coach: "sprout",
+      datareader: "chart-column", navigator: "map", creator: "lightbulb" },
+    letter: { E: "smile", I: "coffee", S: "eye", N: "telescope", T: "scale", F: "heart", J: "calendar-check", P: "shuffle" },
+  };
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function icon(name, cls = "ic") {
+    const s = document.createElementNS(SVGNS, "svg");
+    s.setAttribute("class", cls); s.setAttribute("aria-hidden", "true");
+    const u = document.createElementNS(SVGNS, "use"); u.setAttribute("href", "#i-" + name);
+    s.append(u); return s;
+  }
+  // icon in a soft rounded square; size "", "sm" or "lg"
+  const badge = (name, size = "", tone = "") => {
+    const b = document.createElement("span");
+    b.className = "badge-ic" + (size ? " badge-ic--" + size : "") + (tone ? " tone-" + tone : "");
+    b.setAttribute("aria-hidden", "true"); b.append(icon(name)); return b;
+  };
+
   // ---------- helpers ----------
   const $ = s => document.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => {
@@ -216,6 +240,7 @@
       const status = done ? "✓ ทำแล้ว: " + p.label(st.me)
         : answered ? `ทำค้างไว้ ${answered}/${p.items.length} ข้อ` : "ยังไม่ได้ทำ";
       const b = el("button", { type: "button", class: "part", "aria-pressed": String(st.part === k) },
+        badge(ICON.part[k]),
         el("span", { class: "part__title", text: p.title }),
         el("span", { class: "part__meta", text: `${p.sub} · ${p.time}` }),
         el("span", { class: "part__status" + (done ? " part__status--done" : ""), text: status }));
@@ -239,8 +264,8 @@
   function renderStart(box) {
     const p = PARTS[st.part], ans = st.ans[st.part], answered = ans.filter(Boolean).length;
     const done = p.done(st.me);
-    box.append(el("h2", { class: "section-title" }, el("span", { text: p.title })),
-      el("p", { class: "muted", text: `${p.sub} · ${p.time}` }));
+    box.append(el("div", { class: "start-head" }, badge(ICON.part[st.part], "lg"),
+      el("div", {}, el("h2", { class: "subhead", text: p.title }), el("p", { class: "muted", text: `${p.sub} · ${p.time}` }))));
     const rules = el("ul", { class: "rules" });
     p.rules.forEach(r => rules.append(el("li", { text: r })));
     box.append(rules);
@@ -249,8 +274,9 @@
       return;
     }
     const resume = answered > 0 && answered < ans.length && !p.timed;
-    const start = el("button", { class: "btn big-cta", type: "button",
-      text: resume ? `ทำต่อจากข้อ ${st2.pos[st.part] + 1}` : done ? "ทำใหม่" : "เริ่มเลย" });
+    const start = el("button", { class: "btn big-cta", type: "button" },
+      icon(resume ? "play" : done ? "rotate-ccw" : "play"),
+      resume ? `ทำต่อจากข้อ ${st2.pos[st.part] + 1}` : done ? "ทำใหม่" : "เริ่มเลย");
     start.addEventListener("click", () => {
       if (!resume) {
         // timed test always starts clean; others keep earlier choices so a retake is quick
@@ -276,7 +302,7 @@
     const pause = el("button", { class: "linkbtn", type: "button", text: p.timed ? "ออก (เริ่มใหม่ทีหลัง)" : "พักไว้ก่อน" });
     pause.addEventListener("click", () => { st2.view = "start"; saveDraft(); renderFlow(); });
     box.append(el("div", { class: "flow__bar" },
-      el("span", { class: "flow__count", text: `${p.title} · ข้อ ${i + 1} / ${n}` }), pause));
+      el("span", { class: "flow__count" }, icon(ICON.part[st.part]), `${p.title} · ข้อ ${i + 1} / ${n}`), pause));
     // timed test shows one bar only (the clock); the count above carries progress
     if (!p.timed) box.append(el("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(n), "aria-valuenow": String(i) },
       el("span", { class: "progress__bar", style: `width:${pct}%` })));
@@ -285,7 +311,7 @@
     if (p.timed) {
       timerBox = el("div", { class: "timer" },
         el("div", { class: "timer__track" }, el("span", { class: "timer__fill" })),
-        el("span", { class: "timer__txt" }));
+        el("span", { class: "timer__txt" }, icon("timer"), el("span", { class: "timer__n" })));
       box.append(timerBox);
     }
     box.append(el("div", { class: "flow__topic", id: "q-topic", text: q.t || "ข้อไหนเป็นตัวคุณมากกว่า" }));
@@ -314,12 +340,12 @@
 
     const nav = el("div", { class: "flow__nav" });
     if (!p.timed && i > 0) {
-      const back = el("button", { class: "btn btn--ghost", type: "button", text: "← ข้อก่อนหน้า" });
+      const back = el("button", { class: "btn btn--ghost", type: "button" }, icon("arrow-left"), "ข้อก่อนหน้า");
       back.addEventListener("click", () => { st2.pos[st.part] = i - 1; saveDraft(); renderFlow(); });
       nav.append(back);
     } else nav.append(el("span"));
     if (!p.timed && ans[i]) {
-      const fwd = el("button", { class: "btn btn--ghost", type: "button", text: "ข้อถัดไป →" });
+      const fwd = el("button", { class: "btn btn--ghost", type: "button" }, "ข้อถัดไป", icon("arrow-right"));
       fwd.addEventListener("click", () => next());
       nav.append(fwd);
     } else nav.append(el("span", { class: "keys", text: `กดปุ่ม 1–${scale.length} บนคีย์บอร์ดได้` }));
@@ -361,7 +387,7 @@
   function startTimer(box, onEnd) {
     const total = A.STRENGTH_SECONDS * 1000;
     let left = total, last = performance.now();
-    const fill = box.querySelector(".timer__fill"), txt = box.querySelector(".timer__txt");
+    const fill = box.querySelector(".timer__fill"), txt = box.querySelector(".timer__n");
     const draw = () => {
       fill.style.width = (left / total * 100) + "%";
       const secs = Math.ceil(left / 1000);
@@ -381,10 +407,10 @@
 
   function renderFinish(box) {
     const p = PARTS[st.part];
-    box.append(el("div", { class: "done-mark", "aria-hidden": "true", text: "✓" }),
-      el("h2", { class: "section-title" }, el("span", { text: `ตอบ${p.title}ครบแล้ว` })));
+    box.append(el("div", { class: "celebrate", "aria-hidden": "true" }, badge("party-popper", "lg"), el("i"), el("i"), el("i"), el("i")),
+      el("h2", { class: "subhead", text: `เย้! ตอบ${p.title}ครบแล้ว` }));
     if (p.timed && st2.timeouts) box.append(el("p", { class: "muted", text: `หมดเวลา ${st2.timeouts} ข้อ ข้อเหล่านั้นนับเป็นกลางๆ` }));
-    const save = el("button", { class: "btn big-cta", type: "button", id: "submit", text: "บันทึกและดูผล" });
+    const save = el("button", { class: "btn big-cta", type: "button", id: "submit" }, icon("check"), "บันทึกและดูผล");
     save.addEventListener("click", () => submit(save));
     box.append(save);
     if (!p.timed) {
@@ -446,6 +472,10 @@
     [["analytical", 0, 0], ["driver", 1, 0], ["amiable", 0, 1], ["expressive", 1, 1]].forEach(([k, col, row]) => {
       const x = padX + col * HALF, y = padY + row * HALF, left = col === 0, top = row === 0;
       s.append(sv("rect", { x, y, width: HALF, height: HALF, class: `q q--${k}` }));
+      // a large, faint icon in the middle of each quadrant: a friendly cue for the style
+      const wm = sv("use", { href: `#i-${ICON.style[k]}`, x: x + HALF / 2 - 32, y: y + HALF / 2 - 32, width: 64, height: 64,
+        class: "q-ic", style: `stroke:var(--${k}-ink);opacity:.16` });
+      s.append(wm);
       const tx = left ? padX : padX + inner, anchor = left ? "start" : "end";
       const ty = top ? padY - 28 : padY + inner + 24;
       s.append(sv("text", { x: tx, y: ty, "text-anchor": anchor, class: `q-label q-label--${k}` }, S[k].name));
@@ -521,7 +551,7 @@
     const go = el("button", { class: "btn", type: "button", text: `ทำ${p.title}` });
     go.addEventListener("click", () => { st.part = part; st2.view = "start"; renderParts(); renderFlow(); showTab("tab-quiz"); window.scrollTo({ top: 0 }); });
     return el("div", { class: "card todo" },
-      el("h2", { class: "subhead", text: p.title }),
+      el("h2", { class: "subhead" }, badge(ICON.part[part], "sm"), p.title),
       el("p", { class: "muted", text: `ยังไม่ได้ทำ · ${p.time}` }), go);
   }
   function retakeBtn(part) {
@@ -530,16 +560,16 @@
     return b;
   }
   const partHead = (part, extra) => el("div", { class: "section-title" },
-    el("h2", { text: PARTS[part].title }), el("div", { class: "row" }, extra, retakeBtn(part)));
+    el("h2", { class: "subhead" }, badge(ICON.part[part], "sm"), PARTS[part].title), el("div", { class: "row" }, extra, retakeBtn(part)));
 
   function renderMe() {
     const me = st.me;
     // overview
     const ov = $("#me-overview"); ov.textContent = "";
     const pills = el("div", { class: "overview" });
-    if (hasStyle(me)) pills.append(el("span", { class: `chip tone-${me.style}`, text: `${S[me.style].name} · สี${S[me.style].color}` }));
-    if (hasType(me)) pills.append(el("span", { class: "pill pill--mono", text: me.type }));
-    if (hasStrengths(me)) me.strengths.forEach(k => pills.append(el("span", { class: "pill", text: A.STRENGTHS[k].th })));
+    if (hasStyle(me)) pills.append(el("span", { class: `chip tone-${me.style}` }, icon(ICON.style[me.style]), `${S[me.style].name} · สี${S[me.style].color}`));
+    if (hasType(me)) pills.append(el("span", { class: "pill pill--mono" }, icon("shapes"), me.type));
+    if (hasStrengths(me)) me.strengths.forEach(k => pills.append(el("span", { class: "pill" }, icon(ICON.strength[k]), A.STRENGTHS[k].th)));
     const doneCount = PART_KEYS.filter(k => PARTS[k].done(me)).length;
     ov.append(el("h2", { class: "subhead", text: me.name ? `โปรไฟล์ของ${me.name}` : "โปรไฟล์ของคุณ" }),
       doneCount ? pills : el("p", { class: "muted", text: "ยังไม่มีผล เริ่มจากแบบทดสอบชุดไหนก็ได้" }),
@@ -555,8 +585,8 @@
     const map = el("div", { class: "card map" });
     box.append(
       partHead("style"),
-      el("div", { class: `hero tone-${k}` },
-        el("span", { class: `chip tone-${k}`, text: `สี${d.color} · ${d.tag}` }),
+      el("div", { class: `hero tone-${k}` }, badge(ICON.style[k], "lg"),
+        el("span", { class: `chip tone-${k}` }, icon(ICON.style[k]), `สี${d.color} · ${d.tag}`),
         el("div", {}, el("span", { class: "hero__name", text: d.name }), " ", el("span", { class: "hero__th", text: d.th })),
         el("p", { text: d.gist })),
       el("div", { class: "scores" },
@@ -585,6 +615,7 @@
     row.strengths.forEach((k, i) => {
       const d = A.STRENGTHS[k];
       top.append(el("div", { class: "sk" },
+        badge(ICON.strength[k]),
         el("span", { class: "sk__rank", text: `อันดับ ${i + 1} · ${A.GROUPS[d.group].th}` }),
         el("span", { class: "sk__name", text: d.th }),
         el("span", { class: "sk__en", text: d.en }),
@@ -592,7 +623,7 @@
         el("dl", {}, el("dt", { text: "ใช้ให้เกิดประโยชน์" }), el("dd", { text: d.use }),
           el("dt", { text: "ระวัง" }), el("dd", { text: d.watch }))));
     });
-    const card = el("div", { class: "card stack" }, el("h3", { class: "subhead", text: "คะแนนทั้ง 12 จุดแข็ง (เต็ม 8)" }));
+    const card = el("div", { class: "card stack" }, el("h3", { class: "subhead" }, icon("chart-column"), "คะแนนทั้ง 12 จุดแข็ง (เต็ม 8)"));
     const scores = row.strengthScores || {};
     // when the 3rd place shares its score with others, say so instead of implying a clear winner
     const third = row.strengths.length === 3 ? scores[row.strengths[2]] : undefined;
@@ -601,7 +632,7 @@
       text: `${A.STRENGTHS[row.strengths[2]].th} ได้คะแนนเท่ากับ ${tied.map(k => A.STRENGTHS[k].th).join(", ")} (${third} คะแนน) ระบบเลือกอันดับ 3 จากจำนวนครั้งที่คุณตอบ "มาก" และผลเมื่อสองจุดแข็งนี้เจอกันตรงๆ ถือว่าใช้ได้ใกล้เคียงกัน` }));
     if (Object.keys(scores).length) {
       card.append(barList(Object.keys(A.GROUPS).map(g => ({
-        group: A.GROUPS[g].th,
+        group: A.GROUPS[g].th, icon: ICON.group[g],
         rows: A.STRENGTH_KEYS.filter(k => A.STRENGTHS[k].group === g)
           .map(k => ({ label: A.STRENGTHS[k].th, value: scores[k] || 0, strong: row.strengths.includes(k) })),
       })), 8));
@@ -619,10 +650,10 @@
     Object.entries(A.PAIR_OF).forEach(([ax, [a, b]]) => {
       const pa = (row.typeScores && row.typeScores[ax]) ?? (row.type.includes(a) ? 60 : 40), pb = 100 - pa;
       axes.append(el("div", { class: "axis-row" },
-        el("span", { class: pa > 50 ? "is-win" : "is-lose" }, el("b", { text: a }), ` ${A.AXES[ax].letters[a]} ${pa}%`),
+        el("span", { class: pa > 50 ? "is-win" : "is-lose" }, icon(ICON.letter[a]), " ", el("b", { text: a }), ` ${A.AXES[ax].letters[a]} ${pa}%`),
         el("div", { class: "split", role: "img", "aria-label": `${a} ${pa}% ${b} ${pb}%` },
           el("i", { style: `width:${pa}%` }), el("i", { style: `width:${pb}%` })),
-        el("span", { class: pb > 50 ? "is-win" : "is-lose" }, `${pb}% ${A.AXES[ax].letters[b]} `, el("b", { text: b }))));
+        el("span", { class: pb > 50 ? "is-win" : "is-lose" }, `${pb}% ${A.AXES[ax].letters[b]} `, el("b", { text: b }), " ", icon(ICON.letter[b]))));
     });
     box.append(partHead("type"),
       el("div", { class: "card stack" },
@@ -637,7 +668,7 @@
   function barList(groups, max) {
     const wrap = el("div", { class: "bars" });
     groups.forEach(g => {
-      wrap.append(el("div", { class: "bars__group", text: g.group }));
+      wrap.append(el("div", { class: "bars__group" }, g.icon ? icon(g.icon) : null, " ", g.group));
       g.rows.forEach(r => {
         const pct = max ? Math.round(r.value / max * 100) : 0;
         wrap.append(el("div", { class: "bar" + (r.value === 0 ? " is-gap" : ""), title: r.who || "" },
@@ -687,6 +718,7 @@
     ORDER.forEach(k => {
       const n = styled.filter(r => r.style === k).length;
       tiles.append(el("div", { class: `tile tone-${k}` },
+        icon(ICON.style[k]),
         el("span", { class: "tile__label", text: `${S[k].name} · ${S[k].color}` }),
         el("span", { class: "tile__num", text: String(n) }),
         el("span", { class: "tile__unit", text: styled.length ? `คน · ${Math.round(n / styled.length * 100)}%` : "คน" })));
@@ -704,7 +736,7 @@
       spot.className = `spot tone-${tone}`;
       spot.append(el("div", { class: "spot__head" },
         el("span", { class: "spot__name", text: cur.name + meTag(cur) }),
-        hasStyle(cur) ? el("span", { class: `chip tone-${cur.style}`, text: `${S[cur.style].name} · ${S[cur.style].th}` }) : null,
+        hasStyle(cur) ? el("span", { class: `chip tone-${cur.style}` }, icon(ICON.style[cur.style]), `${S[cur.style].name} · ${S[cur.style].th}`) : null,
         el("span", { class: "badge", text: teamName(cur.team) }),
         hasStyle(cur) && isNearLine(cur.a, cur.r) ? el("span", { class: "badge", text: "ใกล้เส้นแบ่ง" }) : null));
       const typeRow = el("div", { class: "spot__row" }, el("span", { class: "spot__key", text: "บุคลิก" }));
@@ -712,7 +744,7 @@
         ? el("span", {}, el("b", { class: "pill--mono", text: cur.type }), ` ${A.TYPES[cur.type].th} · ${A.TYPES[cur.type].tip}`)
         : el("span", { class: "muted", text: "ยังไม่ได้ทำ" }));
       const strRow = el("div", { class: "spot__row" }, el("span", { class: "spot__key", text: "จุดแข็ง" }));
-      if (hasStrengths(cur)) cur.strengths.forEach(k => strRow.append(el("span", { class: "pill", text: A.STRENGTHS[k].th })));
+      if (hasStrengths(cur)) cur.strengths.forEach(k => strRow.append(el("span", { class: "pill" }, icon(ICON.strength[k]), A.STRENGTHS[k].th)));
       else strRow.append(el("span", { class: "muted", text: "ยังไม่ได้ทำ" }));
       spot.append(typeRow, strRow);
       if (hasStyle(cur)) spot.append(
@@ -733,7 +765,7 @@
     const counts = ORDER.map(k => [k, rows.filter(r => r.style === k).length]).sort((a, b) => b[1] - a[1]);
     const [topK, topN] = counts[0];
     const missing = counts.filter(x => x[1] === 0).map(x => S[x[0]].name);
-    ins.append(el("h3", { class: "subhead", text: "สไตล์การสื่อสารของทีม" }),
+    ins.append(el("h3", { class: "subhead" }, icon("message-circle-heart"), "สไตล์การสื่อสารของทีม"),
       el("p", { text: `สไตล์ที่มีมากที่สุดคือ ${S[topK].name} (${topN} จาก ${rows.length} คน) ทีมอาจมองลูกค้าหรือปัญหาจากมุมของ ${S[topK].name} มากเกินไป ลองชวนคนสไตล์อื่นมาช่วยมองด้วย` }));
     if (missing.length) ins.append(el("p", { text: `ยังไม่มีคนสไตล์ ${missing.join(", ")} ในกลุ่มนี้ เวลาเจอลูกค้าสไตล์นี้ ทีมอาจต้องตั้งใจปรับวิธีคุยมากเป็นพิเศษ` }));
     ins.hidden = false;
@@ -742,12 +774,12 @@
   function renderTeamStrengths(all) {
     const box = $("#team-strengths"); box.textContent = "";
     const rows = all.filter(hasStrengths);
-    box.append(el("h3", { class: "subhead", text: "จุดแข็งของทีม" }));
+    box.append(el("h3", { class: "subhead" }, icon("medal"), "จุดแข็งของทีม"));
     if (!rows.length) { box.append(el("p", { class: "muted", text: "ยังไม่มีใครทำแบบทดสอบจุดแข็ง" })); return; }
     box.append(el("p", { class: "muted", text: `จำนวนคนที่มีจุดแข็งนั้นอยู่ใน 3 อันดับแรก (จาก ${rows.length} คน)` }));
     const holders = k => rows.filter(r => r.strengths.includes(k));
     box.append(barList(Object.keys(A.GROUPS).map(g => ({
-      group: `${A.GROUPS[g].th} · ${rows.reduce((n, r) => n + r.strengths.filter(k => A.STRENGTHS[k].group === g).length, 0)}`,
+      icon: ICON.group[g], group: `${A.GROUPS[g].th} · ${rows.reduce((n, r) => n + r.strengths.filter(k => A.STRENGTHS[k].group === g).length, 0)}`,
       rows: A.STRENGTH_KEYS.filter(k => A.STRENGTHS[k].group === g).map(k => {
         const h = holders(k);
         return { label: A.STRENGTHS[k].th, value: h.length, who: h.map(r => r.name).join(", ") };
@@ -761,17 +793,17 @@
   function renderTeamTypes(all) {
     const box = $("#team-types"); box.textContent = "";
     const rows = all.filter(hasType);
-    box.append(el("h3", { class: "subhead", text: "บุคลิก 4 ตัวอักษรของทีม" }));
+    box.append(el("h3", { class: "subhead" }, icon("shapes"), "บุคลิก 4 ตัวอักษรของทีม"));
     if (!rows.length) { box.append(el("p", { class: "muted", text: "ยังไม่มีใครทำแบบทดสอบบุคลิก 4 ตัวอักษร" })); return; }
     const axes = el("div", { class: "axes" });
     Object.entries(A.PAIR_OF).forEach(([ax, [a, b]]) => {
       const na = rows.filter(r => r.type.includes(a)).length, nb = rows.length - na;
       const pa = Math.round(na / rows.length * 100);
       axes.append(el("div", { class: "axis-row" },
-        el("span", { class: na >= nb ? "is-win" : "is-lose" }, el("b", { text: a }), ` ${A.AXES[ax].letters[a]} · ${na} คน`),
+        el("span", { class: na >= nb ? "is-win" : "is-lose" }, icon(ICON.letter[a]), " ", el("b", { text: a }), ` ${A.AXES[ax].letters[a]} · ${na} คน`),
         el("div", { class: "split", role: "img", "aria-label": `${a} ${na} คน ${b} ${nb} คน` },
           el("i", { style: `width:${pa}%` }), el("i", { style: `width:${100 - pa}%` })),
-        el("span", { class: nb >= na ? "is-win" : "is-lose" }, `${nb} คน · ${A.AXES[ax].letters[b]} `, el("b", { text: b }))));
+        el("span", { class: nb >= na ? "is-win" : "is-lose" }, `${nb} คน · ${A.AXES[ax].letters[b]} `, el("b", { text: b }), " ", icon(ICON.letter[b]))));
     });
     const counts = {};
     rows.forEach(r => (counts[r.type] = counts[r.type] || []).push(r.name));
@@ -795,7 +827,7 @@
       if (!members.length) return;
       const title = k === "none" ? "ยังไม่ได้ทำ Social Style" : `${S[k].name} · ${S[k].th}`;
       const group = el("div", { class: `group tone-${k}` },
-        el("div", { class: "group__head" }, el("span", { text: title }), el("span", { class: "group__count", text: String(members.length) })));
+        el("div", { class: "group__head" }, el("span", {}, icon(k === "none" ? "smile" : ICON.style[k]), " ", title), el("span", { class: "group__count", text: String(members.length) })));
       members.forEach(r => {
         const sub = [teamName(r.team), hasType(r) ? r.type : null, hasStrengths(r) ? A.STRENGTHS[r.strengths[0]].th : null].filter(Boolean).join(" · ");
         const row = el("div", { class: `person tone-${k}${st.sel === r.id ? " is-sel" : ""}`, role: "button", tabindex: "0", "aria-pressed": String(st.sel === r.id) },

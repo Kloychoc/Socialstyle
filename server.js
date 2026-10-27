@@ -34,8 +34,19 @@ function fileStore() {
   const load = () => { try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch { return {}; } };
   return {
     async init() { fs.mkdirSync(path.dirname(file), { recursive: true }); },
-    async list() { return Object.values(load()); },
+    async list() { return Object.entries(load()).filter(([k]) => k !== "__merged").map(([, v]) => v); },
     async get(id) { return load()[id] || null; },
+    // copy parts from `fromId` into `keepId`, keep a backup copy of `fromId`, then remove it
+    async absorb(keepId, fromId, parts) {
+      const all = load(), keep = all[keepId], from = all[fromId];
+      if (!keep || !from) return;
+      parts.forEach(sec => [sec.answersKey, ...sec.fields].forEach(k => { keep[k] = from[k]; }));
+      const bak = all.__merged || (all.__merged = []);
+      bak.push({ ...from, mergedInto: keepId, mergedAt: new Date().toISOString() });
+      delete all[fromId];
+      fs.writeFileSync(file + ".tmp", JSON.stringify(all, null, 2));
+      fs.renameSync(file + ".tmp", file);
+    },
     async upsert(row) {
       const all = load(); all[row.id] = { ...(all[row.id] || {}), ...row };
       fs.writeFileSync(file + ".tmp", JSON.stringify(all, null, 2));
@@ -74,6 +85,23 @@ function pgStore(url) {
         ADD COLUMN IF NOT EXISTS strength_scale INT`);
     },
     async list() { return (await pool.query(`SELECT ${cols} FROM results ORDER BY updated_at`)).rows; },
+    // copy parts from `fromId` into `keepId`, keep a backup copy of `fromId`, then remove it (one transaction)
+    async absorb(keepId, fromId, parts) {
+      const c = await pool.connect();
+      try {
+        await c.query("BEGIN");
+        await c.query(`CREATE TABLE IF NOT EXISTS results_merged (id TEXT, merged_into TEXT,
+          merged_at TIMESTAMPTZ NOT NULL DEFAULT now(), row JSONB NOT NULL)`);
+        await c.query(`INSERT INTO results_merged (id, merged_into, row) SELECT id, $2, to_jsonb(src) FROM results src WHERE id = $1`, [fromId, keepId]);
+        const colsToCopy = parts.flatMap(sec => [ANSWER_COL[sec.answersKey], ...sec.cols]);
+        if (colsToCopy.length) await c.query(
+          `UPDATE results k SET ${colsToCopy.map(col => `${col} = f.${col}`).join(", ")}
+           FROM results f WHERE k.id = $1 AND f.id = $2`, [keepId, fromId]);
+        await c.query("DELETE FROM results WHERE id = $1", [fromId]);
+        await c.query("COMMIT");
+      } catch (e) { await c.query("ROLLBACK").catch(() => {}); throw e; }
+      finally { c.release(); }
+    },
     async get(id) { return (await pool.query(`SELECT ${cols} FROM results WHERE id = $1`, [id])).rows[0] || null; },
     // Saves name/team plus ONE part; the other parts of the row are left as they are.
     async upsert(x, sec) {
@@ -100,8 +128,32 @@ const DB_ENV =
 const DB_URL = DB_ENV ? process.env[DB_ENV] : "";
 // On Vercel the disk is read-only, so a database is required there.
 const store = DB_URL ? pgStore(DB_URL) : (process.env.VERCEL ? null : fileStore());
+// ---------- same person on two browsers ----------
+// Each browser gets its own id, so someone who used two devices shows up twice. Rows with the same
+// name (ignoring case and spaces) in the same team are treated as one person: the parts the kept row
+// is missing are copied over from the other, and the other row is moved to a backup (results_merged).
+// The kept row is the one just saved, otherwise the most recently updated one.
+const nameKey = r => `${String(r.name || "").trim().toLowerCase().replace(/\s+/g, " ")}|${r.team}`;
+const hasPart = (row, sec) => Array.isArray(row[sec.answersKey]) && row[sec.answersKey].length > 0;
+async function mergeSamePerson(preferId) {
+  const rows = await store.list();
+  const groups = {};
+  rows.forEach(r => (groups[nameKey(r)] = groups[nameKey(r)] || []).push(r));
+  for (const group of Object.values(groups)) {
+    if (group.length < 2) continue;
+    group.sort((x, y) => (x.id === preferId ? -1 : y.id === preferId ? 1 : new Date(y.updatedAt) - new Date(x.updatedAt)));
+    const keep = { ...group[0] };
+    for (const other of group.slice(1)) {
+      const parts = Object.values(SECTIONS).filter(sec => !hasPart(keep, sec) && hasPart(other, sec));
+      await store.absorb(keep.id, other.id, parts);
+      parts.forEach(sec => [sec.answersKey, ...sec.fields].forEach(k => { keep[k] = other[k]; }));
+      console.log(`merged ${other.id} into ${keep.id} (${keep.name}): ${parts.map(p => p.answersKey).join(", ") || "nothing new"}`);
+    }
+  }
+}
+
 let ready = null; // init once per instance, on the first request
-const ensureReady = () => (ready ||= store.init().catch(e => { ready = null; throw e; }));
+const ensureReady = () => (ready ||= store.init().then(() => mergeSamePerson()).catch(e => { ready = null; throw e; }));
 
 // Results are re-scored from the stored answers when read, so a scoring fix applies to everyone
 // who already took the test (strength ranking tie-break changed after launch).
@@ -182,6 +234,7 @@ app.put("/api/results/:id", async (req, res, next) => {
     // scored on the server, never trusted from the client
     const row = { id, name, team: body.team, [sec.answersKey]: answers, ...sec.score(answers), updatedAt: new Date().toISOString() };
     await store.upsert(row, sec);
+    await mergeSamePerson(id);
     res.json(fresh(await store.get(id)));
   } catch (e) { next(e); }
 });
